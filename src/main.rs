@@ -7,7 +7,9 @@ use serde_json::Result;
 
 // import other files
 mod export;
+mod cli;
 use export::decide_export;
+use cli::{Parser, Cli};
 
 // Define structs for the data structure
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -27,13 +29,17 @@ pub struct AllChats {
 }
 
 fn main() {
+
+    // Parse the CLI args
+    let args = Cli::parse();
+
     // First obtain the bearer token securely
     let bearer_token = rpassword::prompt_password("Your Bearer Token: ").unwrap();
-    request_sync(bearer_token);
+    request_sync(bearer_token, args);
 
 }
 
-fn request_sync(bearer_token: String) {
+fn request_sync(bearer_token: String, args: Cli) {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
     // Create a Reqwest client
@@ -51,7 +57,7 @@ fn request_sync(bearer_token: String) {
             match resp.text() {
                 Ok(body) => {
                     // Sucessful response
-                    extract_chats(body);
+                    extract_chats(body, args);
                 }
                 Err(err) => {
                     eprintln!("Error reading response body: {}", err);
@@ -65,7 +71,7 @@ fn request_sync(bearer_token: String) {
 }
 
 // Extract the chats from the API response; puts into the AllChats struct
-fn extract_chats(response: String) {
+fn extract_chats(response: String, args: Cli) {
     // Parse to JSON
     let json: Value = serde_json::from_str(&response).unwrap_or_else(|err| {
         println!("Error parsing JSON response: {}", err);
@@ -123,5 +129,5 @@ fn extract_chats(response: String) {
     }
 
     // Call the decide_export function to decide how to export the chats
-    decide_export(all_chats);
+    decide_export(all_chats, args);
 }
