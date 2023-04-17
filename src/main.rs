@@ -2,27 +2,35 @@ use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
 use serde_json::Value;
 
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
+
+// import other files
+mod export;
+use export::decide_export;
+
 // Define structs for the data structure
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Message {
     author: String,
     message: String,
     timestamp: String,
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Chat {
     ID: String,
     messages: Vec<Message>,
 }
-#[derive(Debug)]
-struct AllChats {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AllChats {
     chats: Vec<Chat>,
 }
 
 fn main() {
     // First obtain the bearer token securely
     let bearer_token = rpassword::prompt_password("Your Bearer Token: ").unwrap();
-    request_sync(bearer_token)
+    request_sync(bearer_token);
+
 }
 
 fn request_sync(bearer_token: String) {
@@ -56,19 +64,22 @@ fn request_sync(bearer_token: String) {
     }
 }
 
-// Extract the chats from the API response
-fn extract_chats(response: String) -> Option<Message> {
+// Extract the chats from the API response; puts into the AllChats struct
+fn extract_chats(response: String) {
     // Parse to JSON
     let json: Value = serde_json::from_str(&response).unwrap_or_else(|err| {
-        eprintln!("Error parsing JSON response: {}", err);
+        println!("Error parsing JSON response: {}", err);
         Value::Null
     });
+
+    // Assign AllChat struct to contain the multiple chats
+
+    let mut all_chats = AllChats { chats: Vec::new() };
 
     // Access the "join" field within the "rooms" field
     if let Some(join) = json["rooms"]["join"].as_object() {
         // Iterate through each room dynamically
 
-        // Create a lovely house for all the Chat structs to live in; before they are ad
         for (room_id, room_data) in join {
             println!("Room: {}", room_id);
             // Event timeline
@@ -91,12 +102,6 @@ fn extract_chats(response: String) -> Option<Message> {
                             let timestamp = Utc.timestamp_opt(timestamp, 0).unwrap();
                             let timestamp = timestamp.to_rfc3339_opts(Secs, true);
 
-                            // Print to stdout with formating
-                            println!(
-                                "[{}] {}: {}",
-                                timestamp, event["sender"], event["content"]["body"]
-                            );
-
                             // Add data to the Message struct
                             let message = Message {
                                 author: event["sender"].to_string(),
@@ -104,17 +109,19 @@ fn extract_chats(response: String) -> Option<Message> {
                                 timestamp: timestamp,
                             };
 
-                            // Push to the Chats struct
+                            // Push the individual message into the chats struct
                             chat.messages.push(message)
                         }
                     }
                 }
             }
-
-            println!("{:#?}", chat);
+            // Push the chat into the AllChats struct
+            all_chats.chats.push(chat)
         }
     } else {
         println!("'join' field not found within 'rooms'");
     }
-    None
+
+    // Call the decide_export function to decide how to export the chats
+    decide_export(all_chats);
 }

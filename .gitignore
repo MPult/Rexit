@@ -17,3 +17,9 @@ Cargo.lock
 /target
 
 .vscode
+
+
+# REXIT EXPORT FILES
+*.txt
+*.json
+*.csv
