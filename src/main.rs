@@ -1,15 +1,13 @@
 use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use serde::{Deserialize, Serialize};
-use serde_json::Result;
-
 // import other files
-mod export;
 mod cli;
+mod export;
+use cli::{Cli, Parser};
 use export::decide_export;
-use cli::{Parser, Cli};
 
 // Define structs for the data structure
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -20,7 +18,7 @@ struct Message {
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Chat {
-    ID: String,
+    id: String,
     messages: Vec<Message>,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -29,17 +27,19 @@ pub struct AllChats {
 }
 
 fn main() {
-
     // Parse the CLI args
     let args = Cli::parse();
 
     // First obtain the bearer token securely
     let bearer_token = rpassword::prompt_password("Your Bearer Token: ").unwrap();
-    request_sync(bearer_token, args);
 
+    // Request the sync which includes the messages in a timeline
+    let sync = request_sync(bearer_token).unwrap();
+
+    println!("{:#?}", sync);
+    decide_export(sync, args);
 }
-
-fn request_sync(bearer_token: String, args: Cli) {
+fn request_sync(bearer_token: String) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
     // Create a Reqwest client
@@ -49,51 +49,29 @@ fn request_sync(bearer_token: String, args: Cli) {
     let resp = client
         .get(SYNC_ENDPOINT)
         .header("Authorization", format!("Bearer {}", bearer_token))
-        .send();
+        .send()
+        .expect("Failed to send HTTP request");
 
-    // Check for errors and print the response body
-    match resp {
-        Ok(resp) => {
-            match resp.text() {
-                Ok(body) => {
-                    // Sucessful response
-                    extract_chats(body, args);
-                }
-                Err(err) => {
-                    eprintln!("Error reading response body: {}", err);
-                }
-            }
-        }
-        Err(err) => {
-            eprintln!("Error: {}", err);
-        }
-    }
-}
+    // Read the response body
+    let body = resp.text().expect("Failed to read response body");
 
-// Extract the chats from the API response; puts into the AllChats struct
-fn extract_chats(response: String, args: Cli) {
-    // Parse to JSON
-    let json: Value = serde_json::from_str(&response).unwrap_or_else(|err| {
-        println!("Error parsing JSON response: {}", err);
-        Value::Null
-    });
+    // Parse response body to JSON
+    let json: Value = serde_json::from_str(&body).expect("Error parsing JSON response");
 
     // Assign AllChat struct to contain the multiple chats
-
     let mut all_chats = AllChats { chats: Vec::new() };
 
     // Access the "join" field within the "rooms" field
     if let Some(join) = json["rooms"]["join"].as_object() {
         // Iterate through each room dynamically
-
-        for (room_id, room_data) in join {
+        for (room_id, _) in join {
             println!("Room: {}", room_id);
             // Event timeline
             let events = &join[room_id]["timeline"]["events"];
 
             // Assign the struct to contain the messages for this room
             let mut chat = Chat {
-                ID: room_id.to_string(),
+                id: room_id.to_string(),
                 messages: Vec::new(),
             };
 
@@ -104,14 +82,19 @@ fn extract_chats(response: String, args: Cli) {
                     if let Some(content) = event["content"].as_object() {
                         if content.contains_key("body") {
                             // Parse the unix timestamp and convert to ISO
-                            let timestamp = event["origin_server_ts"].as_i64().unwrap_or(0) / 1000;
-                            let timestamp = Utc.timestamp_opt(timestamp, 0).unwrap();
-                            let timestamp = timestamp.to_rfc3339_opts(Secs, true);
+                            let timestamp =
+                                event["origin_server_ts"].as_i64().expect("Failed to parse timestamp") / 1000;
+
+                            let timestamp = Utc
+                                .timestamp_opt(timestamp, 0)
+                                .unwrap()
+                                .to_rfc3339_opts(Secs, true)
+                                .to_string();
 
                             // Add data to the Message struct
                             let message = Message {
-                                author: event["sender"].to_string(),
-                                message: event["content"]["body"].to_string(),
+                                author: event["sender"].as_str()?.to_string(),
+                                message: event["content"]["body"].as_str()?.to_string(),
                                 timestamp: timestamp,
                             };
 
@@ -129,5 +112,5 @@ fn extract_chats(response: String, args: Cli) {
     }
 
     // Call the decide_export function to decide how to export the chats
-    decide_export(all_chats, args);
+    Some(all_chats)
 }

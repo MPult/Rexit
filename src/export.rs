@@ -1,9 +1,6 @@
-use std::fmt::format;
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::{fs, io};
-
-use super::cli;
+use std::fs;
 
 use crate::cli::Cli;
 use crate::AllChats;
@@ -30,7 +27,7 @@ pub fn export_to_txt(all_chats: AllChats) {
     // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
     for chat in all_chats.chats {
         // Create the file for each chat / room
-        let filename = std::path::PathBuf::from(&chat.ID[1..10]).with_extension("txt");
+        let filename = std::path::PathBuf::from(&chat.id[1..10]).with_extension("txt");
         std::fs::write(filename.clone(), "").unwrap();
 
         // Iterate over each message in the chat; append to the file
@@ -66,7 +63,7 @@ pub fn export_to_csv(all_chats: AllChats) {
     // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
     for chat in all_chats.chats {
         // Create the file for each chat / room
-        let filename = std::path::PathBuf::from(&chat.ID[1..10]).with_extension("csv");
+        let filename = std::path::PathBuf::from(&chat.id[1..10]).with_extension("csv");
         std::fs::write(filename.clone(), "timestamp, author, message \n").unwrap();
 
         // Iterate over each message in the chat; append to the file
