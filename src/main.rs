@@ -1,9 +1,13 @@
-use std::io::Write;
-
 use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
+use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::process::exit;
+
+extern crate pretty_env_logger;
+#[macro_use]
+extern crate log;
 
 // import other files
 mod export;
@@ -31,6 +35,8 @@ pub struct AllChats {
 }
 
 fn main() {
+    pretty_env_logger::init();
+
     // Parse the CLI args
     let args = Cli::parse();
 
@@ -38,30 +44,36 @@ fn main() {
     let bearer_token: String;
     if args.token == true {
         // Use the bearer token flow
-        bearer_token = rpassword::prompt_password("Your Bearer Token: ")
-            .expect("Error Proccessing Bearer Token");
+        trace!("Bearer token auth flow");
+
+        bearer_token = Password::new("Your Bearer Token")
+            .prompt()
+            .expect("Error reading bearer token"); //rpassword::prompt_password("Your Bearer Token: ")
     } else {
         // Use the username password auth flow
-        println!("Your Username: ");
-        std::io::stdout().flush().expect("Can't flush buffer");
+        trace!("Passoword auth flow");
 
-        let mut username: String = String::default();
-        std::io::stdin().read_line(&mut username).unwrap();
+        let username = Text::new("Your Reddit Username")
+            .prompt()
+            .expect("Error reading username"); //username.trim().to_string();
 
-        let username = username.trim().to_string();
+        let password = Password::new("Your Reddit Password")
+            .without_confirmation()
+            .with_display_toggle_enabled()
+            .prompt()
+            .expect("Error reading password"); //rpassword::prompt_password("Your Password: ")
 
-        let password = rpassword::prompt_password("Your Password: ")
-            .expect("Error Proccessing Password");
-        
-        bearer_token = request_login(username, password);
+        bearer_token = request_login(username.to_owned(), password.to_owned());
     }
 
     // Request the sync which includes the messages in a timeline
     let sync = request_sync(bearer_token).unwrap();
 
-    println!("{:#?}", sync);
+    debug!("{:#?}", { sync.clone() });
+    info!("Found {} Chats", sync.chats.len());
     decide_export(sync, args);
 }
+
 fn request_sync(bearer_token: String) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
@@ -71,6 +83,8 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
         .danger_accept_invalid_certs(true)
         .build()
         .expect("Error making Reqwest Client");
+
+    debug!("Bearer Token: {}", bearer_token);
 
     // Send an HTTP GET request with the bearer token in the "Authorization" header
     let resp = client
@@ -92,7 +106,7 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
     if let Some(join) = json["rooms"]["join"].as_object() {
         // Iterate through each room dynamically
         for (room_id, _) in join {
-            println!("Room: {}", room_id);
+            info!("Found a Room: {}", room_id);
             // Event timeline
             let events = &join[room_id]["timeline"]["events"];
 
@@ -137,7 +151,8 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
             all_chats.chats.push(chat)
         }
     } else {
-        println!("'join' field not found within 'rooms'");
+        error!("Something went wrong - Check Token/Password");
+        exit(0);
     }
 
     // Call the decide_export function to decide how to export the chats

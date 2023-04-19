@@ -9,7 +9,7 @@ pub fn request_login(username: String, password: String) -> String {
 
     // Reddit is doing a wierd thing where * is not urlencoded. Sorry for everyone that has * and %2A in their password
     if password.contains("*") {
-        println!("Password has *");
+        debug!("Password has *; URL-encode was rewritten");
         encoded_password = password.replace("%2A", "*");
     } else {
         encoded_password = encode(&password).into_owned();
@@ -78,31 +78,54 @@ pub fn request_login(username: String, password: String) -> String {
 
     // Request / to get the bearer token
     let response = client 
-      .get("https://www.reddit.com/")
-      .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
-      .header("Accept-Encoding", "gzip, deflate")
-      .header("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
-      .header("Referer","https://www.reddit.com/login/")
-      .header("Sec-Fetch-Dest", "document")
-      .header("Sec-Fetch-Mode", "navigate")
-      .header("Sec-Fetch-Site", "same-origin")
-      .header("Sec-Fetch-User", "?1")
-      .header("Te", "trailers")
-      .send()
-      .expect("Error getting bearer token");
-  
-    // println!("{:#?}", response.text());
-    
+        .get("https://www.reddit.com/")
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
+        .header("Accept-Encoding", "gzip, deflate")
+        .header("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
+        .header("Referer","https://www.reddit.com/login/")
+        .header("Sec-Fetch-Dest", "document")
+        .header("Sec-Fetch-Mode", "navigate")
+        .header("Sec-Fetch-Site", "same-origin")
+        .header("Sec-Fetch-User", "?1")
+        .header("Te", "trailers")
+        .send()
+        .expect("Error getting bearer token");
+
     // Extract the Bearer Token from the JSON response
     let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
 
     let mut bearer_token: String = String::default();
     for i in bearer_regex.captures_iter(&response.text().unwrap()) {
         for i in i.get(1).iter() {
-          bearer_token = String::from(i.as_str().clone());
-            println!("Bearer Token: {}", bearer_token);
+            bearer_token = String::from(i.as_str().clone());
+            println!("Bearer Token: {}", bearer_token.trim());
         }
     }
+
+    // Login to matrix.reddit.com using the bearer for reddit.com
+
+    let data = format!(
+        "{{\"type\":\"com.reddit.token\",\"token\":\"{bearer_token}\",\"initial_device_display_name\":\"Reddit Web Client\"}}",
+
+    );
+
+    let response = client
+        .post("https://matrix.redditspace.com/_matrix/client/r0/login")
+        .header("Content-Type", "application/json")
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
+        .header("Accept", "application/json")
+        .header("Origin", "https://chat.reddit.com")
+        .header("Sec-Fetch-Site", "cross-site")
+        .header("Sec-Fetch-Mode", "cors")
+        .header("Sec-Fetch-Dest", "empty")
+        .header("Accept-Encoding", "gzip, deflate")
+        .header("Accept-Language", "en-US,en;q=0.5")
+        .header("Te", "trailers")
+        .body(data)
+        .send()
+        .expect("Failed to send HTTP request; to login to matrix");
+
+    println!("{:#?}", response);
 
     return bearer_token;
 }
