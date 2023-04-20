@@ -3,7 +3,6 @@ use chrono::{TimeZone, Utc};
 use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::process::exit;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -16,6 +15,7 @@ mod cli;
 use cli::{Cli, Parser};
 mod login;
 use login::request_login;
+mod macros;
 
 // Define structs for the data structure
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -77,8 +77,6 @@ fn main() {
 fn request_sync(bearer_token: String) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
-
-
     // Create a Reqwest client
     let client = reqwest::blocking::Client::builder()
         .cookie_store(true)
@@ -105,56 +103,63 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
     let mut all_chats = AllChats { chats: Vec::new() };
 
     // Access the "join" field within the "rooms" field
-    if let Some(join) = json["rooms"]["join"].as_object() {
-        // Iterate through each room dynamically
-        for (room_id, _) in join {
-            info!("Found a Room: {}", room_id);
-            // Event timeline
-            let events = &join[room_id]["timeline"]["events"];
+    if json["rooms"]["join"].as_object().is_none() {
+        error!("rooms.join is none");
+        exit!(0);
+    }
+    let join = json["rooms"]["join"].as_object().unwrap();
+    // Iterate through each room dynamically
+    for (room_id, _) in join {
+        info!("Found a Room: {}", room_id);
+        // Event timeline
+        let events = &join[room_id]["timeline"]["events"];
 
-            // Assign the struct to contain the messages for this room
-            let mut chat = Chat {
-                id: room_id.to_string(),
-                messages: Vec::new(),
-            };
+        // Assign the struct to contain the messages for this room
+        let mut chat = Chat {
+            id: room_id.to_string(),
+            messages: Vec::new(),
+        };
 
-            // Iterate over the timeline to find events that contain the body key (all messages do; non-message items dont)
-            if let Some(events) = events.as_array() {
-                for event in events {
-                    // Check if it is a message
-                    if let Some(content) = event["content"].as_object() {
-                        if content.contains_key("body") {
-                            // Parse the unix timestamp and convert to ISO
-                            let timestamp = event["origin_server_ts"]
-                                .as_i64()
-                                .expect("Failed to parse timestamp")
-                                / 1000;
-
-                            let timestamp = Utc
-                                .timestamp_opt(timestamp, 0)
-                                .unwrap()
-                                .to_rfc3339_opts(Secs, true)
-                                .to_string();
-
-                            // Add data to the Message struct
-                            let message = Message {
-                                author: event["sender"].as_str()?.to_string(),
-                                message: event["content"]["body"].as_str()?.to_string(),
-                                timestamp: timestamp,
-                            };
-
-                            // Push the individual message into the chats struct
-                            chat.messages.push(message)
-                        }
-                    }
-                }
-            }
-            // Push the chat into the AllChats struct
-            all_chats.chats.push(chat)
+        // Iterate over the timeline to find events that contain the body key (all messages do; non-message items don't)
+        let events = events.as_array();
+        if events.is_none() {
+            error!("Events is none");
+            exit!(0);
         }
-    } else {
-        error!("Something went wrong - Check Token/Password");
-        exit(0);
+        let events = events.unwrap();
+        for event in events {
+            // Check if it is a message
+            if event["content"].as_object().is_none() {
+                continue;
+            }
+            let content = event["content"].as_object().unwrap();
+            if content.contains_key("body") {
+                // Parse the unix timestamp and convert to ISO
+                let timestamp = event["origin_server_ts"]
+                    .as_i64()
+                    .expect("Failed to parse timestamp")
+                    / 1000;
+
+                let timestamp = Utc
+                    .timestamp_opt(timestamp, 0)
+                    .unwrap()
+                    .to_rfc3339_opts(Secs, true)
+                    .to_string();
+
+                // Add data to the Message struct
+                let message = Message {
+                    author: event["sender"].as_str()?.to_string(),
+                    message: event["content"]["body"].as_str()?.to_string(),
+                    timestamp: timestamp,
+                };
+
+                // Push the individual message into the chats struct
+                chat.messages.push(message)
+            }
+        }
+
+        // Push the chat into the AllChats struct
+        all_chats.chats.push(chat)
     }
 
     // Call the decide_export function to decide how to export the chats

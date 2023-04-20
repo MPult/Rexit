@@ -1,10 +1,8 @@
 use regex::Regex;
 use urlencoding::encode;
 
-
 // Request a Bearer token using the username and password
 pub fn request_login(username: String, password: String) -> String {
-
     // URL encode the password & username
     let encoded_password: String;
     let username = encode(&username);
@@ -18,7 +16,6 @@ pub fn request_login(username: String, password: String) -> String {
     }
 
     // Obtain the CSRF token
-
 
     let client = reqwest::blocking::Client::builder()
         .cookie_store(true)
@@ -49,8 +46,6 @@ pub fn request_login(username: String, password: String) -> String {
         }
     }
 
-
-
     // Form data for actual login
     let form_data = format!(
         "csrf_token={}&otp=&password={}&dest=https%3A%2F%2Fwww.reddit.com&username={}",
@@ -79,7 +74,7 @@ pub fn request_login(username: String, password: String) -> String {
     debug!("Login Request response: {:#?}", response);
 
     // Request / to get the bearer token
-    let response = client 
+    let response = client
         .get("https://www.reddit.com/")
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
         .header("Accept-Encoding", "gzip, deflate")
