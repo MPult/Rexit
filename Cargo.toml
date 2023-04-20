@@ -10,8 +10,7 @@ license = "GPL-3.0"
 
 [dependencies]
 chrono = "0.4.24"
-reqwest = {version = "0.11.16", features = ["blocking", "multipart", "cookies"]}
-rpassword = "7.2.0"
+reqwest = {version = "0.11.16", features = ["blocking", "multipart", "cookies", "gzip"]}
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0"
 clap = { version = "4.2.1", features = ["derive"] }

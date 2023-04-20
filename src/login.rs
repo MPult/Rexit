@@ -1,8 +1,10 @@
 use regex::Regex;
 use urlencoding::encode;
 
+
 // Request a Bearer token using the username and password
 pub fn request_login(username: String, password: String) -> String {
+
     // URL encode the password & username
     let encoded_password: String;
     let username = encode(&username);
@@ -16,9 +18,11 @@ pub fn request_login(username: String, password: String) -> String {
     }
 
     // Obtain the CSRF token
+
+
     let client = reqwest::blocking::Client::builder()
         .cookie_store(true)
-        .danger_accept_invalid_certs(true)
+        // .danger_accept_invalid_certs(true) // Used in development to trust a proxy
         .build()
         .expect("Error making Reqwest Client");
 
@@ -28,7 +32,7 @@ pub fn request_login(username: String, password: String) -> String {
         .send()
         .expect("Failed to send HTTP request; to obtain CSRF token");
 
-    println!("{:?}", resp);
+    debug!("CSRF Request Response: {:?}", resp);
     let body = resp.text();
     let body = body.expect("Failed to read response body");
 
@@ -41,7 +45,7 @@ pub fn request_login(username: String, password: String) -> String {
     for i in csrf.captures_iter(body.as_str()) {
         for i in i.get(1).iter() {
             csrf_token = String::from(i.as_str().clone());
-            println!("CSRF Token: {}", csrf_token);
+            debug!("CSRF Token: {}", csrf_token);
         }
     }
 
@@ -52,8 +56,6 @@ pub fn request_login(username: String, password: String) -> String {
         "csrf_token={}&otp=&password={}&dest=https%3A%2F%2Fwww.reddit.com&username={}",
         csrf_token, encoded_password, username
     );
-
-    println!("{:#?}", form_data);
 
     // Perform the actual login post request
     let response = client
@@ -74,7 +76,7 @@ pub fn request_login(username: String, password: String) -> String {
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-    println!("{:#?}", response);
+    debug!("Login Request response: {:#?}", response);
 
     // Request / to get the bearer token
     let response = client 
@@ -98,16 +100,17 @@ pub fn request_login(username: String, password: String) -> String {
     for i in bearer_regex.captures_iter(&response.text().unwrap()) {
         for i in i.get(1).iter() {
             bearer_token = String::from(i.as_str().clone());
-            println!("Bearer Token: {}", bearer_token.trim());
+            debug!("Bearer Token: {}", bearer_token.trim());
         }
     }
 
     // Login to matrix.reddit.com using the bearer for reddit.com
-
     let data = format!(
         "{{\"type\":\"com.reddit.token\",\"token\":\"{bearer_token}\",\"initial_device_display_name\":\"Reddit Web Client\"}}",
 
     );
+
+    debug!("Matrix request body: {:#?}", data);
 
     let response = client
         .post("https://matrix.redditspace.com/_matrix/client/r0/login")
@@ -125,7 +128,7 @@ pub fn request_login(username: String, password: String) -> String {
         .send()
         .expect("Failed to send HTTP request; to login to matrix");
 
-    println!("{:#?}", response);
+    debug!("Matrix login response: {:#?}", response);
 
     return bearer_token;
 }

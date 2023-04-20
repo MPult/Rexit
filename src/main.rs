@@ -48,20 +48,20 @@ fn main() {
 
         bearer_token = Password::new("Your Bearer Token")
             .prompt()
-            .expect("Error reading bearer token"); //rpassword::prompt_password("Your Bearer Token: ")
+            .expect("Error reading bearer token");
     } else {
         // Use the username password auth flow
         trace!("Passoword auth flow");
 
         let username = Text::new("Your Reddit Username")
             .prompt()
-            .expect("Error reading username"); //username.trim().to_string();
+            .expect("Error reading username");
 
         let password = Password::new("Your Reddit Password")
             .without_confirmation()
             .with_display_toggle_enabled()
             .prompt()
-            .expect("Error reading password"); //rpassword::prompt_password("Your Password: ")
+            .expect("Error reading password");
 
         bearer_token = request_login(username.to_owned(), password.to_owned());
     }
@@ -77,14 +77,14 @@ fn main() {
 fn request_sync(bearer_token: String) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
+
+
     // Create a Reqwest client
     let client = reqwest::blocking::Client::builder()
         .cookie_store(true)
-        .danger_accept_invalid_certs(true)
+        // .danger_accept_invalid_certs(true) // Used in development to trust a proxy
         .build()
         .expect("Error making Reqwest Client");
-
-    debug!("Bearer Token: {}", bearer_token);
 
     // Send an HTTP GET request with the bearer token in the "Authorization" header
     let resp = client
@@ -95,6 +95,8 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
 
     // Read the response body
     let body = resp.text().expect("Failed to read response body");
+
+    debug!("Sync Response: {:#?}", body);
 
     // Parse response body to JSON
     let json: Value = serde_json::from_str(&body).expect("Error parsing JSON response");
