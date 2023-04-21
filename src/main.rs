@@ -1,5 +1,6 @@
 use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
+use console::style;
 use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -50,6 +51,12 @@ fn main() {
     // Parse the CLI args
     let args = Cli::parse();
 
+    if args.debug {
+        println!("{}\n{}", 
+            style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
+            style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
+    }
+
     // Decide what auth flow to use
     let bearer_token: String;
     if args.token == true {
@@ -77,22 +84,30 @@ fn main() {
     }
 
     // Request the sync which includes the messages in a timeline
-    let sync = request_sync(bearer_token).unwrap();
+    let sync = request_sync(bearer_token, args.debug).unwrap();
 
     debug!("{:#?}", { sync.clone() });
     info!("Found {} Chats", sync.chats.len());
     decide_export(sync, args);
 }
 
-fn request_sync(bearer_token: String) -> Option<AllChats> {
+fn request_sync(bearer_token: String, debug: bool) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
     // Create a Reqwest client
-    let client = reqwest::blocking::Client::builder()
-        .cookie_store(true)
-        // .danger_accept_invalid_certs(true) // Used in development to trust a proxy
-        .build()
-        .expect("Error making Reqwest Client");
+    let client: reqwest::blocking::Client;
+    if debug {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
+            .build()
+            .expect("Error making Reqwest Client");
+    } else {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .build()
+            .expect("Error making Reqwest Client");
+    }
 
     // Send an HTTP GET request with the bearer token in the "Authorization" header
     let resp = client
@@ -167,7 +182,7 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
                 }
 
                 // Translates the userID of the message into a displayname
-                let displayname = id_to_displayname(event["sender"].as_str()?.to_string());
+                let displayname = id_to_displayname(event["sender"].as_str()?.to_string(), debug);
 
                 // Add data to the Message struct
                 let message = Message {
