@@ -92,6 +92,7 @@ fn main() {
 
     // Request the sync which includes the messages in a timeline
     let sync = request_sync(bearer_token, args.debug, args.images).unwrap();
+    let sync = request_sync(bearer_token, args.debug).unwrap();
 
     debug!("{:#?}", { sync.clone() });
     info!("Found {} Chats", sync.chats.len());
