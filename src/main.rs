@@ -3,6 +3,7 @@ use chrono::{TimeZone, Utc};
 use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::env;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -15,8 +16,10 @@ mod cli;
 use cli::{Cli, Parser};
 mod login;
 use login::request_login;
-mod macros;
+mod id_translation;
+use id_translation::id_to_displayname;
 
+mod macros;
 // Define structs for the data structure
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Message {
@@ -35,6 +38,13 @@ pub struct AllChats {
 }
 
 fn main() {
+    // Initialize logging
+    // If no log level is set => set to info
+    match env::var("RUST_LOG") {
+        Ok(value) => debug!("Detected loglevel: {value}"),
+        Err(_) => env::set_var("RUST_LOG", "INFO"),
+    }
+
     pretty_env_logger::init();
 
     // Parse the CLI args
@@ -120,7 +130,7 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
             messages: Vec::new(),
         };
 
-        // Iterate over the timeline to find events that contain the body key (all messages do; non-message items don't)
+        // Iterate over the timeline to find events that are messages (text or image)
         let events = events.as_array();
         if events.is_none() {
             error!("Events is none");
@@ -129,11 +139,7 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
         let events = events.unwrap();
         for event in events {
             // Check if it is a message
-            if event["content"].as_object().is_none() {
-                continue;
-            }
-            let content = event["content"].as_object().unwrap();
-            if content.contains_key("body") {
+            if event["type"] == "m.room.message" {
                 // Parse the unix timestamp and convert to ISO
                 let timestamp = event["origin_server_ts"]
                     .as_i64()
@@ -146,10 +152,27 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
                     .to_rfc3339_opts(Secs, true)
                     .to_string();
 
+                // Check if message is a image. If yes use the URL as message text.
+                // Possible types are: m.text, m.image (matrix specs for more but not implemented in reddit)
+                let mut message_text = String::default();
+
+                if event["content"]["msgtype"] == "m.text" {
+                    // Text message
+                    message_text = event["content"]["body"].as_str()?.to_string()
+                }
+
+                if event["content"]["msgtype"] == "m.image" {
+                    // Image message
+                    message_text = event["content"]["url"].as_str()?.to_string()
+                }
+
+                // Translates the userID of the message into a displayname
+                let displayname = id_to_displayname(event["sender"].as_str()?.to_string());
+
                 // Add data to the Message struct
                 let message = Message {
-                    author: event["sender"].as_str()?.to_string(),
-                    message: event["content"]["body"].as_str()?.to_string(),
+                    author: displayname,
+                    message: message_text,
                     timestamp: timestamp,
                 };
 
