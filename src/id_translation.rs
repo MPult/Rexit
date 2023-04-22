@@ -12,12 +12,11 @@ pub fn id_to_displayname(id: String, debug: bool) -> String {
             .danger_accept_invalid_certs(true) // Used in development to trust a proxy
             .build()
             .expect("Error making Reqwest Client");
-    }
-    else {
+    } else {
         client = reqwest::blocking::Client::builder()
-        .cookie_store(true)
-        .build()
-        .expect("Error making Reqwest Client"); 
+            .cookie_store(true)
+            .build()
+            .expect("Error making Reqwest Client");
     }
 
     // Request name from API

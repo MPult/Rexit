@@ -5,6 +5,7 @@ use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::env;
+use std::path::PathBuf;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -19,6 +20,7 @@ mod login;
 use login::request_login;
 mod id_translation;
 use id_translation::id_to_displayname;
+mod images;
 
 mod macros;
 // Define structs for the data structure
@@ -83,15 +85,20 @@ fn main() {
         bearer_token = request_login(username.to_owned(), password.to_owned());
     }
 
+    // Make sure there is an images folder to output to if images is true
+    if args.images && !PathBuf::from("./images").exists() {
+        std::fs::create_dir("./images").unwrap();
+    }
+
     // Request the sync which includes the messages in a timeline
-    let sync = request_sync(bearer_token, args.debug).unwrap();
+    let sync = request_sync(bearer_token, args.debug, args.images).unwrap();
 
     debug!("{:#?}", { sync.clone() });
     info!("Found {} Chats", sync.chats.len());
     decide_export(sync, args);
 }
 
-fn request_sync(bearer_token: String, debug: bool) -> Option<AllChats> {
+fn request_sync(bearer_token: String, debug: bool, images: bool) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
     // Create a Reqwest client
@@ -175,10 +182,10 @@ fn request_sync(bearer_token: String, debug: bool) -> Option<AllChats> {
                     // Text message
                     message_text = event["content"]["body"].as_str()?.to_string()
                 }
-
-                if event["content"]["msgtype"] == "m.image" {
+                if images && event["content"]["msgtype"] == "m.image" {
                     // Image message
-                    message_text = event["content"]["url"].as_str()?.to_string()
+                    message_text = event["content"]["url"].as_str()?.to_string();
+                    images::export_image(&client, message_text.clone());
                 }
 
                 // Translates the userID of the message into a displayname
