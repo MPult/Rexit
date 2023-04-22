@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::env;
 use std::path::PathBuf;
+use std::time::Duration;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -117,11 +118,13 @@ fn request_sync(bearer_token: String, debug: bool, images: bool) -> Option<AllCh
         client = reqwest::blocking::Client::builder()
             .cookie_store(true)
             .danger_accept_invalid_certs(true) // Used in development to trust a proxy
+            .timeout(Duration::from_secs(60))
             .build()
             .expect("Error making Reqwest Client");
     } else {
         client = reqwest::blocking::Client::builder()
             .cookie_store(true)
+            .timeout(Duration::from_secs(60))
             .build()
             .expect("Error making Reqwest Client");
     }
