@@ -1,7 +1,12 @@
+//! Argument Parser
+
 pub use clap::{Args, Parser, Subcommand};
 
+/// CLI argument parser, see the Cli struct for the possible arguments
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+
+/// Struct that contains the possible args
 pub struct Cli {
     /// The formats to export to. Options: csv,json,txt
     #[arg(short, long)]

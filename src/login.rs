@@ -1,7 +1,12 @@
+//! Module to perform the (insanely intricate) login process. 
+//! 1. GET `reddit.com/login` to obtain the CSRF token to give to the login.
+//! 2. POST `reddit.com/login` to login providing username, CSRF token, Password.
+//! 3. GET `reddit.com/` to obtain bearer token from the body of response.
+//! 4. Perfom matrix chat login à la [spec](https://spec.matrix.org/v1.6/client-server-api/#login)
 use regex::Regex;
 use urlencoding::encode;
 
-// Request a Bearer token using the username and password
+/// Perfoms the login ritual.
 pub fn request_login(username: String, password: String) -> String {
     // URL encode the password & username
     let encoded_password: String;

@@ -1,3 +1,6 @@
+//! This crate provides a easy way of exporting reddit chats into a few formats (including images). 
+//! This document is intended for developers/contributors, see the [README](https://github.com/MPult/Rexit) for user-centric documention.
+
 use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
 use inquire::{self, Password, Text};
@@ -18,25 +21,30 @@ mod login;
 use login::request_login;
 mod id_translation;
 use id_translation::id_to_displayname;
-
 mod macros;
-// Define structs for the data structure
+
+/// Struct for a singular message.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Message {
     author: String,
     message: String,
     timestamp: String,
 }
+/// Struct containing a chat/room.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Chat {
     id: String,
     messages: Vec<Message>,
 }
+/// Contains all the chats/rooms.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AllChats {
     chats: Vec<Chat>,
 }
 
+/// Prepares the logger according to the `RUST_LOG` enviornment variable. If none set it is set to `INFO`
+/// Then according to the auth flow either username and password are inquired; or just a bearer token.
+/// It runs the sync function, and handles the export.
 fn main() {
     // Initialize logging
     // If no log level is set => set to info
@@ -84,6 +92,7 @@ fn main() {
     decide_export(sync, args);
 }
 
+/// Performs the sync request as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#syncing)
 fn request_sync(bearer_token: String) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
