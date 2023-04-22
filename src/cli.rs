@@ -15,4 +15,12 @@ pub struct Cli {
     /// To use the bearer token flow, instead of username and password
     #[arg(short, long)]
     pub token: bool,
+
+    /// Allow debugging of Rexit
+    #[arg(long)]
+    pub debug: bool,
+
+    /// Output images too (outputs to images folder)
+    #[arg(long)]
+    pub images: bool,
 }

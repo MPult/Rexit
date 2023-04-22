@@ -3,10 +3,12 @@
 
 use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
+use console::style;
 use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::env;
+use std::path::PathBuf;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -21,6 +23,8 @@ mod login;
 use login::request_login;
 mod id_translation;
 use id_translation::id_to_displayname;
+mod images;
+
 mod macros;
 
 /// Struct for a singular message.
@@ -58,6 +62,12 @@ fn main() {
     // Parse the CLI args
     let args = Cli::parse();
 
+    if args.debug {
+        println!("{}\n{}", 
+            style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
+            style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
+    }
+
     // Decide what auth flow to use
     let bearer_token: String;
     if args.token == true {
@@ -84,8 +94,13 @@ fn main() {
         bearer_token = request_login(username.to_owned(), password.to_owned());
     }
 
+    // Make sure there is an images folder to output to if images is true
+    if args.images && !PathBuf::from("./images").exists() {
+        std::fs::create_dir("./images").unwrap();
+    }
+
     // Request the sync which includes the messages in a timeline
-    let sync = request_sync(bearer_token).unwrap();
+    let sync = request_sync(bearer_token, args.debug, args.images).unwrap();
 
     debug!("{:#?}", { sync.clone() });
     info!("Found {} Chats", sync.chats.len());
@@ -93,15 +108,23 @@ fn main() {
 }
 
 /// Performs the sync request as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#syncing)
-fn request_sync(bearer_token: String) -> Option<AllChats> {
+fn request_sync(bearer_token: String, debug: bool, images: bool) -> Option<AllChats> {
     const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
 
     // Create a Reqwest client
-    let client = reqwest::blocking::Client::builder()
-        .cookie_store(true)
-        // .danger_accept_invalid_certs(true) // Used in development to trust a proxy
-        .build()
-        .expect("Error making Reqwest Client");
+    let client: reqwest::blocking::Client;
+    if debug {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
+            .build()
+            .expect("Error making Reqwest Client");
+    } else {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .build()
+            .expect("Error making Reqwest Client");
+    }
 
     // Send an HTTP GET request with the bearer token in the "Authorization" header
     let resp = client
@@ -169,14 +192,14 @@ fn request_sync(bearer_token: String) -> Option<AllChats> {
                     // Text message
                     message_text = event["content"]["body"].as_str()?.to_string()
                 }
-
-                if event["content"]["msgtype"] == "m.image" {
+                if images && event["content"]["msgtype"] == "m.image" {
                     // Image message
-                    message_text = event["content"]["url"].as_str()?.to_string()
+                    message_text = event["content"]["url"].as_str()?.to_string();
+                    images::export_image(&client, message_text.clone());
                 }
 
                 // Translates the userID of the message into a displayname
-                let displayname = id_to_displayname(event["sender"].as_str()?.to_string());
+                let displayname = id_to_displayname(event["sender"].as_str()?.to_string(), debug);
 
                 // Add data to the Message struct
                 let message = Message {
