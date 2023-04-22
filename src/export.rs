@@ -1,3 +1,5 @@
+//! This module contains the functions that handle the exporting features of Rexit.
+
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -5,7 +7,7 @@ use std::io::Write;
 use crate::cli::Cli;
 use crate::AllChats;
 
-// Function to check what export format is desired and calls the apporopriate function below
+/// Function to check what export format is desired and calls the apporopriate export function.
 pub fn decide_export(all_chats: AllChats, cli: Cli) {
     // Split the comma seperated format cli args into a array
     let formats: Vec<&str> = cli.formats.split(",").collect();
@@ -21,7 +23,7 @@ pub fn decide_export(all_chats: AllChats, cli: Cli) {
     }
 }
 
-// Function to export the chats into .txt files
+/// Export the chats into .txt files.
 pub fn export_to_txt(all_chats: AllChats) {
     info!("Exporting to TXT");
     // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
@@ -51,7 +53,7 @@ pub fn export_to_txt(all_chats: AllChats) {
     }
 }
 
-// Function to export the chats into .json files
+/// Export the chats into .json files.
 pub fn export_to_json(all_chats: AllChats) {
     info!("Exporting to JSON");
 
@@ -60,7 +62,7 @@ pub fn export_to_json(all_chats: AllChats) {
     fs::write("export.json", file_data).expect("Unable to write file");
 }
 
-// Function to export the chats into .csv files
+/// Export the chats into .csv files.
 pub fn export_to_csv(all_chats: AllChats) {
     info!("Exporting to CSV");
 

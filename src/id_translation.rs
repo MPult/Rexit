@@ -1,3 +1,5 @@
+//! Converts the given userID into a displayname using the API. ([SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3profileuseriddisplayname))
+
 use cached::proc_macro::cached;
 use serde_json::Value;
 

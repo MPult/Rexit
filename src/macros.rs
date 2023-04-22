@@ -1,3 +1,6 @@
+//! Module to contain all the custom marco definitions.
+
+
 /// Exits the program
 ///
 /// This macro calls exit if running in normal mode, and panics if called in a test.
