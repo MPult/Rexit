@@ -7,7 +7,7 @@ use regex::Regex;
 use urlencoding::encode;
 
 /// Perfoms the login ritual.
-pub fn request_login(username: String, password: String) -> String {
+pub fn request_login(username: String, password: String, debug: bool) -> String {
     // URL encode the password & username
     let encoded_password: String;
     let username = encode(&username);
@@ -21,12 +21,19 @@ pub fn request_login(username: String, password: String) -> String {
     }
 
     // Obtain the CSRF token
-
-    let client = reqwest::blocking::Client::builder()
-        .cookie_store(true)
-        // .danger_accept_invalid_certs(true) // Used in development to trust a proxy
-        .build()
-        .expect("Error making Reqwest Client");
+    let client: reqwest::blocking::Client;
+    if debug {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
+            .build()
+            .expect("Error making Reqwest Client");
+    } else {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .build()
+            .expect("Error making Reqwest Client");
+    }
 
     // Send an HTTP GET request to get the CSRF token
     let resp = client

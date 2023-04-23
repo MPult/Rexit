@@ -7,9 +7,9 @@ use console::style;
 use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::env;
 use std::path::PathBuf;
 use std::time::Duration;
+use std::env;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -92,7 +92,7 @@ fn main() {
             .prompt()
             .expect("Error reading password");
 
-        bearer_token = request_login(username.to_owned(), password.to_owned());
+        bearer_token = request_login(username.to_owned(), password.to_owned(), args.debug);
     }
 
     // Handle output folder stuff
@@ -110,34 +110,61 @@ fn main() {
         std::fs::create_dir("./out/images").unwrap();
     }
 
-    // Request the sync which includes the messages in a timeline
-    let sync = request_sync(bearer_token, "0".to_owned(), args.debug, args.images).unwrap();
+    // Get list of rooms
+    let rooms = list_rooms(bearer_token.clone(), args.debug);
 
-    debug!("{:#?}", { sync.clone() });
-    info!("Found {} Chats", sync.chats.len());
-    decide_export(sync, args);
+    let mut allChats = AllChats { chats: Vec::new() };
+
+    // Iterate over rooms and request their messages
+    for room in rooms {
+        let messages = get_messages(bearer_token.clone(), room.as_str().unwrap(), args.debug);
+        allChats.chats.push(messages);
+    }
+
+    // debug!("{:#?}", { sync.clone() });
+    // info!("Found {} Chats", sync.chats.len());
+    decide_export(allChats, args);
 }
 
-/// Performs the sync request as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#syncing)
-/// If next_batch is 0 it is assumed this is the initial sync, non-zero values indicate a next batch
-fn request_sync(
-    bearer_token: String,
-    next_batch: String,
-    debug: bool,
-    images: bool,
-) -> Option<AllChats> {
-    // If next_batch is not 0 then it is NOT the initial request, thus applying the since paramater
-    let sync_endpoint: String;
-    if next_batch == "0" {
-        info!("Perfoming initial Sync");
-        sync_endpoint = "https://matrix.redditspace.com/_matrix/client/r0/sync".to_owned();
+
+/// Returns list of all rooms that the user is joined to
+fn list_rooms(bearer_token: String, debug: bool) -> Vec<serde_json::Value> {
+    // Create a Reqwest client
+    let client: reqwest::blocking::Client;
+    if debug {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
+            .timeout(Duration::from_secs(60))
+            .build()
+            .expect("Error making Reqwest Client");
     } else {
-        info!("Getting next batch: {next_batch}");
-        sync_endpoint = format!(
-            "https://matrix.redditspace.com/_matrix/client/r0/sync?since={}",
-            next_batch
-        );
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .timeout(Duration::from_secs(60))
+            .build()
+            .expect("Error making Reqwest Client");
     }
+
+    let resp = client
+        .get("https://matrix.redditspace.com/_matrix/client/v3/joined_rooms")
+        .header("Authorization", format!("Bearer {}", bearer_token))
+        .send()
+        .expect("Failed to send HTTP request; to obtain rooms");
+
+    let body = resp.text().expect("Error parsing body");
+    let json: Value = serde_json::from_str(&body).expect("Error parsing Rooms list JSON");
+    let rooms = json["joined_rooms"]
+        .as_array()
+        .expect("Error parsing array");
+
+    info!("Found {} room(s) ", rooms.len());
+    return rooms.to_vec();
+}
+
+/// Returns a Chat struct for this room
+fn get_messages(bearer_token: String, room_id: &str, debug: bool) -> Chat {
+    info!("Getting messages for room: {room_id}");
 
     // Create a Reqwest client
     let client: reqwest::blocking::Client;
@@ -156,97 +183,54 @@ fn request_sync(
             .expect("Error making Reqwest Client");
     }
 
-    // Send an HTTP GET request with the bearer token in the "Authorization" header
-    let resp = client
-        .get(sync_endpoint)
+    let url = format!("https://matrix.redditspace.com/_matrix/client/r0/rooms/{room_id}/messages?limit=10000&dir=b");
+    println!("{url}");
+    let response = client
+        .get(url)
         .header("Authorization", format!("Bearer {}", bearer_token))
         .send()
-        .expect("Failed to send HTTP request");
+        .expect("Failed to send HTTP request; to obtain messages");
 
-    // Read the response body
-    let body = resp.text().expect("Failed to read response body");
-
-    debug!("Sync Response: {:#?}", body);
-
-    // Parse response body to JSON
+    let body = response.text().expect("Error parsing request body");
     let json: Value = serde_json::from_str(&body).expect("Error parsing JSON response");
 
-    // Assign AllChat struct to contain the multiple chats
-    let mut all_chats = AllChats { chats: Vec::new() };
+    // Contains all the messages for this chat
+    let mut chat = Chat {
+        id: room_id.to_owned(),
+        messages: Vec::new(),
+    };
 
-    // Access the "join" field within the "rooms" field
-    if json["rooms"]["join"].as_object().is_none() {
-        error!("rooms.join is none");
-        exit!(0);
-    }
-    let join = json["rooms"]["join"].as_object().unwrap();
-    // Iterate through each room dynamically
-    for (room_id, _) in join {
-        info!("Found a Room: {}", room_id);
-        // Event timeline
-        let events = &join[room_id]["timeline"]["events"];
+    // Loop through the messages within the chunk
+    for message in json["chunk"].as_array().unwrap() {
+        // Check if it is a text/image
+        if message["type"] == "m.room.message" {
+            // Parse the unix timestamp and convert to ISO
+            let timestamp = message["origin_server_ts"]
+                .as_i64()
+                .expect("Failed to parse timestamp")
+                / 1000;
 
-        // Assign the struct to contain the messages for this room
-        let mut chat = Chat {
-            id: room_id.to_string(),
-            messages: Vec::new(),
-        };
+            let timestamp = Utc
+                .timestamp_opt(timestamp, 0)
+                .unwrap()
+                .to_rfc3339_opts(Secs, true)
+                .to_string();
 
-        // Iterate over the timeline to find events that are messages (text or image)
-        let events = events.as_array();
-        if events.is_none() {
-            error!("Events is none");
-            exit!(0);
-        }
-        let events = events.unwrap();
-        for event in events {
-            // Check if it is a message
-            if event["type"] == "m.room.message" {
-                // Parse the unix timestamp and convert to ISO
-                let timestamp = event["origin_server_ts"]
-                    .as_i64()
-                    .expect("Failed to parse timestamp")
-                    / 1000;
-
-                let timestamp = Utc
-                    .timestamp_opt(timestamp, 0)
-                    .unwrap()
-                    .to_rfc3339_opts(Secs, true)
-                    .to_string();
-
-                // Check if message is a image. If yes use the URL as message text.
-                // Possible types are: m.text, m.image (matrix specs for more but not implemented in reddit)
-                let mut message_text = String::default();
-
-                if event["content"]["msgtype"] == "m.text" {
-                    // Text message
-                    message_text = event["content"]["body"].as_str()?.to_string()
-                }
-                if images && event["content"]["msgtype"] == "m.image" {
-                    // Image message
-                    message_text = event["content"]["url"].as_str()?.to_string();
-                    images::export_image(&client, message_text.clone());
-                }
-
-                // Translates the userID of the message into a displayname
-                let displayname = id_to_displayname(event["sender"].as_str()?.to_string(), debug);
-
-                // Add data to the Message struct
-                let message = Message {
-                    author: displayname,
-                    message: message_text,
-                    timestamp: timestamp,
-                };
-
-                // Push the individual message into the chats struct
-                chat.messages.push(message)
+            // If its a image show the MXC url as content
+            let message_content: String;
+            if message["content"]["msgtype"] == "m.image" {
+                message_content = message["content"]["url"].to_string();
+            } else {
+                message_content = message["content"]["body"].to_string();
             }
+
+            let message_struct = Message {
+                author: id_to_displayname(message["senders"].to_string(), debug),
+                message: message_content,
+                timestamp: timestamp,
+            };
+            chat.messages.push(message_struct);
         }
-
-        // Push the chat into the AllChats struct
-        all_chats.chats.push(chat)
     }
-
-    // Call the decide_export function to decide how to export the chats
-    Some(all_chats)
+    return chat;
 }
