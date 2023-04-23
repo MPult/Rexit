@@ -1,4 +1,4 @@
-//! This crate provides a easy way of exporting reddit chats into a few formats (including images). 
+//! This crate provides a easy way of exporting reddit chats into a few formats (including images).
 //! This document is intended for developers/contributors, see the [README](https://github.com/MPult/Rexit) for user-centric documention.
 
 use chrono::SecondsFormat::Secs;
@@ -95,13 +95,23 @@ fn main() {
         bearer_token = request_login(username.to_owned(), password.to_owned());
     }
 
+    // Handle output folder stuff
+    // Deletes out (we append the batches so this is neccesary)
+
+    if PathBuf::from("./out").exists() {
+        std::fs::remove_dir_all("./out").expect("Error deleting out folder");
+    }
+
+    // Creates out folder
+    std::fs::create_dir("./out").unwrap();
+
     // Make sure there is an images folder to output to if images is true
-    if args.images && !PathBuf::from("./images").exists() {
-        std::fs::create_dir("./images").unwrap();
+    if args.images && !PathBuf::from("./out/images").exists() {
+        std::fs::create_dir("./out/images").unwrap();
     }
 
     // Request the sync which includes the messages in a timeline
-    let sync = request_sync(bearer_token, args.debug, args.images).unwrap();
+    let sync = request_sync(bearer_token, "0".to_owned(), args.debug, args.images).unwrap();
 
     debug!("{:#?}", { sync.clone() });
     info!("Found {} Chats", sync.chats.len());
@@ -109,8 +119,25 @@ fn main() {
 }
 
 /// Performs the sync request as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#syncing)
-fn request_sync(bearer_token: String, debug: bool, images: bool) -> Option<AllChats> {
-    const SYNC_ENDPOINT: &str = "https://matrix.redditspace.com/_matrix/client/r0/sync";
+/// If next_batch is 0 it is assumed this is the initial sync, non-zero values indicate a next batch
+fn request_sync(
+    bearer_token: String,
+    next_batch: String,
+    debug: bool,
+    images: bool,
+) -> Option<AllChats> {
+    // If next_batch is not 0 then it is NOT the initial request, thus applying the since paramater
+    let sync_endpoint: String;
+    if next_batch == "0" {
+        info!("Perfoming initial Sync");
+        sync_endpoint = "https://matrix.redditspace.com/_matrix/client/r0/sync".to_owned();
+    } else {
+        info!("Getting next batch: {next_batch}");
+        sync_endpoint = format!(
+            "https://matrix.redditspace.com/_matrix/client/r0/sync?since={}",
+            next_batch
+        );
+    }
 
     // Create a Reqwest client
     let client: reqwest::blocking::Client;
@@ -131,7 +158,7 @@ fn request_sync(bearer_token: String, debug: bool, images: bool) -> Option<AllCh
 
     // Send an HTTP GET request with the bearer token in the "Authorization" header
     let resp = client
-        .get(SYNC_ENDPOINT)
+        .get(sync_endpoint)
         .header("Authorization", format!("Bearer {}", bearer_token))
         .send()
         .expect("Failed to send HTTP request");

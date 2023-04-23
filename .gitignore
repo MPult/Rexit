@@ -20,11 +20,4 @@ Cargo.lock
 
 
 # REXIT EXPORT FILES
-*.txt
-*.json
-*.csv
-
-images
-images/**
-*.png
-*.jpeg
+/out

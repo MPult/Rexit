@@ -1,4 +1,4 @@
-//! Module to perform the (insanely intricate) login process. 
+//! Module to perform the (insanely intricate) login process.
 //! 1. GET `reddit.com/login` to obtain the CSRF token to give to the login.
 //! 2. POST `reddit.com/login` to login providing username, CSRF token, Password.
 //! 3. GET `reddit.com/` to obtain bearer token from the body of response.

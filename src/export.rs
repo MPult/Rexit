@@ -29,7 +29,9 @@ pub fn export_to_txt(all_chats: AllChats) {
     // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
     for chat in all_chats.chats {
         // Create the file for each chat / room
-        let filename = std::path::PathBuf::from(&chat.id[1..10]).with_extension("txt");
+        let filename = std::path::PathBuf::from("./out")
+            .join(std::path::PathBuf::from(&chat.id[1..10]).with_extension("txt"));
+
         std::fs::write(filename.clone(), "").unwrap();
 
         // Iterate over each message in the chat; append to the file
@@ -59,7 +61,7 @@ pub fn export_to_json(all_chats: AllChats) {
 
     let file_data = serde_json::to_string(&all_chats).unwrap();
 
-    fs::write("export.json", file_data).expect("Unable to write file");
+    fs::write("./out/export.json", file_data).expect("Unable to write file");
 }
 
 /// Export the chats into .csv files.
@@ -69,7 +71,9 @@ pub fn export_to_csv(all_chats: AllChats) {
     // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
     for chat in all_chats.chats {
         // Create the file for each chat / room
-        let filename = std::path::PathBuf::from(&chat.id[1..10]).with_extension("csv");
+
+        let filename = std::path::PathBuf::from("./out")
+            .join(std::path::PathBuf::from(&chat.id[1..10]).with_extension("csv"));
         std::fs::write(filename.clone(), "timestamp, author, message \n").unwrap();
 
         // Iterate over each message in the chat; append to the file

@@ -1,8 +1,8 @@
-use reqwest::blocking::Client;
-use url::Url;
-use std::path::PathBuf;
-use console::style;
 use super::exit;
+use console::style;
+use reqwest::blocking::Client;
+use std::path::PathBuf;
+use url::Url;
 
 pub fn export_image(client: &Client, url: String) {
     info!(target: "export_image", "Getting image: {}", url);
@@ -21,12 +21,17 @@ pub fn export_image(client: &Client, url: String) {
                 "jpeg" => Some("jpeg".to_string()),
                 "png" => Some("png".to_string()),
                 "gif" => Some("gif".to_string()),
-                _ => { exit!(0); }
-            }; 
+                _ => {
+                    exit!(0);
+                }
+            };
         }
     }
     if extension.is_none() {
-        println!("{}", style("Error: Something failed reading the image type").red());
+        println!(
+            "{}",
+            style("Error: Something failed reading the image type").red()
+        );
         error!("Something failed reading the image type");
         exit!(0);
     }
