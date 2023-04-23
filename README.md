@@ -44,7 +44,13 @@ $ cargo install rexit
 ```
 
 ## Contributing
-To keep the docs focused on the user experience the contributing and technical docs were implemented in a separate document.
+To keep the docs focused on the user experience the contributing and technical docs were implemented through cargo doc.
 
+To access these:
+```bash
+$ cargo doc --open
+```
+
+In general all contributions are welcome. I would appreciate if you'd create an issue beforehand, in order for me to plan things out nicely.
 ## License
 [GNU General Public License, Version 3](./LICENSE)

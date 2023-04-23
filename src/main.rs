@@ -7,9 +7,9 @@ use console::style;
 use inquire::{self, Password, Text};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::env;
 use std::path::PathBuf;
 use std::time::Duration;
-use std::env;
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -40,6 +40,7 @@ struct Message {
 struct Chat {
     id: String,
     messages: Vec<Message>,
+    next_batch: String,
 }
 /// Contains all the chats/rooms.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -96,7 +97,7 @@ fn main() {
     }
 
     // Handle output folder stuff
-    // Deletes out (we append the batches so this is neccesary)
+    // Deletes ./out (we append the batches so this is neccesary)
 
     if PathBuf::from("./out").exists() {
         std::fs::remove_dir_all("./out").expect("Error deleting out folder");
@@ -113,21 +114,42 @@ fn main() {
     // Get list of rooms
     let rooms = list_rooms(bearer_token.clone(), args.debug);
 
-    let mut allChats = AllChats { chats: Vec::new() };
+    let mut all_chats = AllChats { chats: Vec::new() };
 
     // Iterate over rooms and request their messages
     for room in rooms {
-        let messages = get_messages(bearer_token.clone(), room.as_str().unwrap(), args.debug);
-        allChats.chats.push(messages);
-    }
+        let mut next_batch: String = "REXIT-INITIAL".to_owned();
 
-    // debug!("{:#?}", { sync.clone() });
-    // info!("Found {} Chats", sync.chats.len());
-    decide_export(allChats, args);
+        while next_batch != "t0_0" {
+            let mut found_chat = false;
+            let chat_struct = get_messages(
+                bearer_token.clone(),
+                room.as_str().unwrap(),
+                next_batch,
+                args.debug,
+            );
+            next_batch = chat_struct.next_batch.clone();
+
+            // Check if a chat with that ID already exits; if yes then append the messages
+            for chat in all_chats.chats.iter_mut() {
+                if chat.id == chat_struct.id {
+                    println!("Chat.id is same as chat_struct ID");
+                    chat.messages.extend_from_slice(&chat_struct.messages);
+                    found_chat = true;
+                    break;
+                }
+            }
+
+            // If the chat is not already present, add it to the list of all chats
+            if !found_chat {
+                all_chats.chats.push(chat_struct.clone());
+            }
+        }
+    }
+    decide_export(all_chats, args);
 }
 
-
-/// Returns list of all rooms that the user is joined to
+/// Returns list of all rooms that the user is joined to as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3directorylistroomroomid)
 fn list_rooms(bearer_token: String, debug: bool) -> Vec<serde_json::Value> {
     // Create a Reqwest client
     let client: reqwest::blocking::Client;
@@ -162,8 +184,8 @@ fn list_rooms(bearer_token: String, debug: bool) -> Vec<serde_json::Value> {
     return rooms.to_vec();
 }
 
-/// Returns a Chat struct for this room
-fn get_messages(bearer_token: String, room_id: &str, debug: bool) -> Chat {
+/// Returns a Chat struct for this room as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3roomsroomidmessages)
+fn get_messages(bearer_token: String, room_id: &str, since: String, debug: bool) -> Chat {
     info!("Getting messages for room: {room_id}");
 
     // Create a Reqwest client
@@ -183,8 +205,15 @@ fn get_messages(bearer_token: String, room_id: &str, debug: bool) -> Chat {
             .expect("Error making Reqwest Client");
     }
 
-    let url = format!("https://matrix.redditspace.com/_matrix/client/r0/rooms/{room_id}/messages?limit=10000&dir=b");
-    println!("{url}");
+    let url;
+
+    // If it is a next batch then add the since
+    if since == "REXIT-INITIAL".to_owned() {
+        url = format!("https://matrix.redditspace.com/_matrix/client/r0/rooms/{room_id}/messages?limit=10000&dir=b");
+    } else {
+        url =format!("https://matrix.redditspace.com/_matrix/client/r0/rooms/{room_id}/messages?limit=10000&dir=b&from={since}");
+    }
+
     let response = client
         .get(url)
         .header("Authorization", format!("Bearer {}", bearer_token))
@@ -198,6 +227,7 @@ fn get_messages(bearer_token: String, room_id: &str, debug: bool) -> Chat {
     let mut chat = Chat {
         id: room_id.to_owned(),
         messages: Vec::new(),
+        next_batch: String::new(),
     };
 
     // Loop through the messages within the chunk
@@ -219,9 +249,10 @@ fn get_messages(bearer_token: String, room_id: &str, debug: bool) -> Chat {
             // If its a image show the MXC url as content
             let message_content: String;
             if message["content"]["msgtype"] == "m.image" {
-                message_content = message["content"]["url"].to_string();
+                message_content = message["content"]["url"].as_str().unwrap().to_string();
+                images::export_image(&client, message_content.clone());
             } else {
-                message_content = message["content"]["body"].to_string();
+                message_content = message["content"]["body"].as_str().unwrap().to_string();
             }
 
             let message_struct = Message {
@@ -232,5 +263,8 @@ fn get_messages(bearer_token: String, room_id: &str, debug: bool) -> Chat {
             chat.messages.push(message_struct);
         }
     }
+    // Apend next batch to chat
+    debug!("End token {}", json["end"].as_str().unwrap().to_string());
+    chat.next_batch = json["end"].as_str().unwrap().to_string();
     return chat;
 }
