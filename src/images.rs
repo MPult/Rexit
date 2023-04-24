@@ -4,7 +4,6 @@ use reqwest::blocking::Client;
 use std::path::PathBuf;
 use url::Url;
 
-
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
 pub fn export_image(client: &Client, url: String) {
     info!(target: "export_image", "Getting image: {}", url);

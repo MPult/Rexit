@@ -5,7 +5,13 @@ use std::fs::OpenOptions;
 use std::io::Write;
 
 use crate::cli::Cli;
-use crate::AllChats;
+use crate::messages::AllChats;
+
+pub enum ExportFormat {
+    JSON,
+    CSV,
+    TXT
+}
 
 /// Function to check what export format is desired and calls the apporopriate export function.
 pub fn decide_export(all_chats: AllChats, cli: Cli) {
