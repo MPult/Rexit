@@ -186,3 +186,8 @@ pub fn iter_rooms(rooms: Vec<serde_json::Value>, bearer: String, debug: bool, ex
 
     all_chats
 }
+
+#[test]
+fn add() {
+    assert!(1 == 1);
+}
