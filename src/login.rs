@@ -2,17 +2,17 @@
 //! 1. GET `reddit.com/login` to obtain the CSRF token to give to the login.
 //! 2. POST `reddit.com/login` to login providing username, CSRF token, Password.
 //! 3. GET `reddit.com/` to obtain bearer token from the body of response.
-//! 4. Perfom matrix chat login à la [spec](https://spec.matrix.org/v1.6/client-server-api/#login)
+//! 4. Perform matrix chat login à la [spec](https://spec.matrix.org/v1.6/client-server-api/#login)
 use regex::Regex;
 use urlencoding::encode;
 
-/// Perfoms the login ritual.
+/// Performs the login ritual.
 pub fn request_login(username: String, password: String, debug: bool) -> String {
     // URL encode the password & username
     let encoded_password: String;
     let username = encode(&username);
 
-    // Reddit is doing a wierd thing where * is not urlencoded. Sorry for everyone that has * and %2A in their password
+    // Reddit is doing a weird thing where * is not urlencoded. Sorry for everyone that has * and %2A in their password
     if password.contains("*") {
         debug!("Password has *; URL-encode was rewritten");
         encoded_password = password.replace("%2A", "*");
@@ -49,7 +49,7 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
     let csrf =
         Regex::new(r#"<input\s+type="hidden"\s+name="csrf_token"\s+value="([^"]*)""#).unwrap();
 
-    // For the love of god do not touch this code ever; i made a deal with the devel to make this work
+    // For the love of god do not touch this code ever; i made a deal with the devil to make this work
     let mut csrf_token: String = String::default();
     for i in csrf.captures_iter(body.as_str()) {
         for i in i.get(1).iter() {
@@ -76,14 +76,14 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .header("Sec-Fetch-Site", "same-origin")
         .header("Sec-Fetch-Mode", "cors")
         .header("Sec-Fetch-Dest", "empty")
-        .header("Referer","https://www.reddit.com/login/")
+        .header("Referrer","https://www.reddit.com/login/")
         .header("Accept-Encoding", "gzip, deflate")
         .header("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
         .body(form_data)
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-    debug!("Login Request response: {:#?}", response);
+    println!("Login Request response: {:#?}", response.text());
 
     // Request / to get the bearer token
     let response = client
@@ -91,7 +91,7 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
         .header("Accept-Encoding", "gzip, deflate")
         .header("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
-        .header("Referer","https://www.reddit.com/login/")
+        .header("Referrer","https://www.reddit.com/login/")
         .header("Sec-Fetch-Dest", "document")
         .header("Sec-Fetch-Mode", "navigate")
         .header("Sec-Fetch-Site", "same-origin")
@@ -99,6 +99,8 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .header("Te", "trailers")
         .send()
         .expect("Error getting bearer token");
+
+    println!("two: {}", response.status().as_u16());
 
     // Extract the Bearer Token from the JSON response
     let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
@@ -136,6 +138,10 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .expect("Failed to send HTTP request; to login to matrix");
 
     debug!("Matrix login response: {:#?}", response);
+    if !response.status().is_success() {
+        println!("three: {}", response.status().as_u16());
+        panic!("login failed");
+    }
 
     return bearer_token;
 }
