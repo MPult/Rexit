@@ -137,7 +137,8 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
 
     debug!("Matrix login response: {:#?}", response);
     if !response.status().is_success() {
-        panic!("login failed")
+        println!("{}", response.status().as_u16());
+        panic!("login failed");
     }
 
     return bearer_token;
