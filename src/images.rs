@@ -1,4 +1,4 @@
-use super::exit;
+use crate::exit;
 use console::style;
 use reqwest::blocking::Client;
 use std::path::PathBuf;

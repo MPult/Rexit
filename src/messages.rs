@@ -142,12 +142,13 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
             chat.messages.push(message_struct);
         }
     }
-    // Apend next batch to chat
+    // Append next batch to chat
     debug!("End token {}", json["end"].as_str().unwrap().to_string());
     chat.next_batch = json["end"].as_str().unwrap().to_string();
     return chat;
 }
 
+/// Iterate over all rooms to return chats
 pub fn iter_rooms(rooms: Vec<serde_json::Value>, bearer: String, debug: bool, export_images: bool) -> AllChats {
     let mut all_chats = AllChats { chats: Vec::new() };
 

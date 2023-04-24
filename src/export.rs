@@ -7,15 +7,17 @@ use std::io::Write;
 use crate::cli::Cli;
 use crate::messages::AllChats;
 
+#[allow(dead_code)]
 pub enum ExportFormat {
     JSON,
     CSV,
     TXT
 }
 
-/// Function to check what export format is desired and calls the apporopriate export function.
+/// Function to check what export format is desired and calls the appropriate export function.
+#[allow(dead_code)]
 pub fn decide_export(all_chats: AllChats, cli: Cli) {
-    // Split the comma seperated format cli args into a array
+    // Split the comma separated format cli args into a array
     let formats: Vec<&str> = cli.formats.split(",").collect();
 
     // Run the appropriate function for each export format
@@ -32,7 +34,7 @@ pub fn decide_export(all_chats: AllChats, cli: Cli) {
 /// Export the chats into .txt files.
 pub fn export_to_txt(all_chats: AllChats) {
     info!("Exporting to TXT");
-    // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
+    // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangeably)
     for chat in all_chats.chats {
         // Create the file for each chat / room
         let filename = std::path::PathBuf::from("./out")
@@ -42,7 +44,7 @@ pub fn export_to_txt(all_chats: AllChats) {
 
         // Iterate over each message in the chat; append to the file
         for message in chat.messages {
-            // Format for the line to be apended
+            // Format for the line to be appended
             let line: String = format!(
                 "[{}] {}: {}",
                 message.timestamp, message.author, message.message
@@ -74,7 +76,7 @@ pub fn export_to_json(all_chats: AllChats) {
 pub fn export_to_csv(all_chats: AllChats) {
     info!("Exporting to CSV");
 
-    // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangibly)
+    // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangeably)
     for chat in all_chats.chats {
         // Create the file for each chat / room
 
@@ -84,7 +86,7 @@ pub fn export_to_csv(all_chats: AllChats) {
 
         // Iterate over each message in the chat; append to the file
         for message in chat.messages {
-            // Format for the line to be apended
+            // Format for the line to be appended
             let line: String = format!(
                 "{}, {}, {}",
                 message.timestamp, message.author, message.message
