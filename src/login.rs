@@ -83,7 +83,7 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-    println!("Login Request response: {:#?}", response);
+    println!("Login Request response: {:#?}", response.text());
     println!("one: {}", response.status().as_u16());
 
     // Request / to get the bearer token
