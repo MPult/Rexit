@@ -83,8 +83,6 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-    println!("Login Request response: {:#?}", response.text());
-
     // Request / to get the bearer token
     let response = client
         .get("https://www.reddit.com/")
