@@ -84,6 +84,7 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .expect("Failed to send HTTP request; to obtain session token");
 
     debug!("Login Request response: {:#?}", response);
+    println!("one: {}", response.status().as_u16());
 
     // Request / to get the bearer token
     let response = client
@@ -99,6 +100,8 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .header("Te", "trailers")
         .send()
         .expect("Error getting bearer token");
+
+    println!("two: {}", response.status().as_u16());
 
     // Extract the Bearer Token from the JSON response
     let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
@@ -137,7 +140,7 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
 
     debug!("Matrix login response: {:#?}", response);
     if !response.status().is_success() {
-        println!("{}", response.status().as_u16());
+        println!("three: {}", response.status().as_u16());
         panic!("login failed");
     }
 
