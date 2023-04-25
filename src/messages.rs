@@ -131,7 +131,12 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
                 message_content = message["content"]["url"].as_str().unwrap().to_string();
                 images::export_image(&client, message_content.clone());
             } else {
-                message_content = message["content"]["body"].as_str().unwrap().to_string();
+                let tmp = message["content"]["body"].as_str();
+                if tmp.is_none() {
+                    warn!("Failed to get message - may have been deleted");
+                    continue;
+                }
+                message_content = tmp.unwrap().to_string();
             }
 
             let message_struct = Message {
