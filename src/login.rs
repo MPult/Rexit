@@ -98,8 +98,6 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
         .send()
         .expect("Error getting bearer token");
 
-    println!("two: {}", response.status().as_u16());
-
     // Extract the Bearer Token from the JSON response
     let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
 
@@ -137,7 +135,6 @@ pub fn request_login(username: String, password: String, debug: bool) -> String 
 
     debug!("Matrix login response: {:#?}", response);
     if !response.status().is_success() {
-        println!("three: {}", response.status().as_u16());
         panic!("login failed");
     }
 

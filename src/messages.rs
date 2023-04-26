@@ -140,7 +140,7 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
             }
 
             let message_struct = Message {
-                author: id_to_displayname(message["senders"].to_string(), debug),
+                author: id_to_displayname(message["sender"].as_str().unwrap().to_string(), debug),
                 message: message_content,
                 timestamp: timestamp,
             };
@@ -175,7 +175,6 @@ pub fn iter_rooms(rooms: Vec<serde_json::Value>, bearer: String, debug: bool, ex
             // Check if a chat with that ID already exits; if yes then append the messages
             for chat in all_chats.chats.iter_mut() {
                 if chat.id == chat_struct.id {
-                    println!("Chat.id is same as chat_struct ID");
                     chat.messages.extend_from_slice(&chat_struct.messages);
                     found_chat = true;
                     break;

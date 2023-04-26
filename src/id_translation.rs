@@ -21,9 +21,10 @@ pub fn id_to_displayname(id: String, debug: bool) -> String {
             .expect("Error making Reqwest Client");
     }
 
+    let url = format!("https://matrix.redditspace.com/_matrix/client/r0/profile/{id}/displayname");
     // Request name from API
     let response = client
-        .get("https://matrix.redditspace.com/_matrix/client/r0/profile/@t2_9b09u6gps:reddit.com/displayname")
+        .get(url)
         .send()
         .expect("Failed to send HTTP request");
 
