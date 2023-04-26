@@ -10,6 +10,14 @@ impl Bearer {
     }
 }
 
+impl std::fmt::Display for Bearer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        println!("{}", self.bearer);
+        
+        std::fmt::Result::Ok(())
+    }
+}
+
 pub fn login(username: String, password: String) -> Bearer {
     // URL encode the password & username
     let encoded_password: String;

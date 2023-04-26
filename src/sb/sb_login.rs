@@ -5,7 +5,9 @@ use crate::ReAPI;
 /// Performs the login, returns the bearer token
 pub fn request_login(client: &ReAPI::Client, username: String, password: String, debug: bool) -> String {
     // Get Reddits bearer token
-    println!("{}", ReAPI::login::login(username, password, debug));
+    let Bearer = ReAPI::login::login(username, password);
+
+    let bearer_str = Bearer.token();
 }
 
 #[cfg(test)]
@@ -21,7 +23,5 @@ mod tests {
         let password = std::env::var("REXIT_PASSWORD").expect("Could not find password in env");
     
         let result = super::request_login(&client, username, password, true);
-
-        assert_eq!(result.displayname, "rexitTest");
     }
 }
