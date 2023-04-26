@@ -1,12 +1,24 @@
 use console::style;
+use std::path::PathBuf;
 use crate::exit;
 
-pub struct image {
+pub struct Image {
+    pub extension: String,
+    pub id: String,
+    data: Vec<u8>,
+}
 
+impl Image {
+    pub fn export_to(&self, path: PathBuf) {
+        let mut path = path;
+        path.push(self.id);
+
+        std::fs::write(path.with_extension(self.extension), self.data).unwrap();
+    }
 }
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
-pub fn export_image(url: String, debug: bool) {
+pub fn get_image(url: String, debug: bool) -> Image {
     let client = super::new_debug_client(debug);
     info!(target: "export_image", "Getting image: {}", url);
     let (url, id) = parse_matrix_image_url(url.as_str());
@@ -39,19 +51,20 @@ pub fn export_image(url: String, debug: bool) {
         exit!(0);
     }
 
-    let data = data.bytes().unwrap();
+    let data = data.bytes().unwrap().to_vec();
 
-    let mut output_path = PathBuf::from("./out/images/");
-    output_path.push(id);
-
-    std::fs::write(output_path.with_extension(extension.unwrap()), data).unwrap();
+    Image {
+        extension: extension.unwrap(),
+        id,
+        data
+    }
 }
 
 fn parse_matrix_image_url(url: &str) -> (String, String) {
-    let url = Url::parse(url).unwrap(); // I assume that all urls given to this function are valid
+    let url = reqwest::Url::parse(url).unwrap(); // I assume that all urls given to this function are valid
 
     let output_url =
-        Url::parse("https://matrix.redditspace.com/_matrix/media/r0/download/reddit.com/").unwrap();
+        reqwest::Url::parse("https://matrix.redditspace.com/_matrix/media/r0/download/reddit.com/").unwrap();
 
     let id = url.path_segments().unwrap().next().unwrap();
 
@@ -60,3 +73,10 @@ fn parse_matrix_image_url(url: &str) -> (String, String) {
     (output_url.to_string(), id.to_string())
 }
 
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn get_image() {
+        super::get_image("mxc://dwdprq7pxbva1".to_string(), true);
+    }
+}
