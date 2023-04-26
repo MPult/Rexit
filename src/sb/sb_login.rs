@@ -5,9 +5,18 @@ use crate::ReAPI;
 /// Performs the login, returns the bearer token
 pub fn request_login(client: &ReAPI::Client, username: String, password: String, debug: bool) -> String {
     // Get Reddits bearer token
-    let Bearer = ReAPI::login(username, password);
+    let bearer = ReAPI::login(username, password, debug);
 
-    let bearer_str = Bearer.token();
+    let bearer_str = bearer.token();
+
+    let response = client
+        .get("https://s.reddit.com/api/v1/sendbird/me")
+        .header("Authorization", format!("Bearer {}", bearer_str))
+        .send()
+        .expect("Failed to send HTTP request - to login to sendbird");
+
+    let value: serde_json::Value = serde_json::from_str(response.text().unwrap().as_str()).unwrap();
+    return value["sb_access_token"].as_str().unwrap().to_string();
 }
 
 #[cfg(test)]
@@ -22,5 +31,6 @@ mod tests {
         let password = std::env::var("REXIT_PASSWORD").expect("Could not find password in env");
     
         let result = super::request_login(&client, username, password, true);
+        println!("{result}");   
     }
 }
