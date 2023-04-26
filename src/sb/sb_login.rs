@@ -3,11 +3,13 @@ use crate::ReAPI;
 
 
 /// Performs the login, returns the bearer token
-pub fn request_login(client: &ReAPI::Client, username: String, password: String, debug: bool) -> String {
+pub fn request_login(username: String, password: String, debug: bool) -> String {
     // Get Reddits bearer token
     let bearer = ReAPI::login(username, password, debug);
 
     let bearer_str = bearer.token();
+
+    let client = ReAPI::new_debug_client(debug);
 
     let response = client
         .get("https://s.reddit.com/api/v1/sendbird/me")
@@ -30,7 +32,7 @@ mod tests {
         let username = std::env::var("REXIT_USERNAME").expect("Could not find username in env");
         let password = std::env::var("REXIT_PASSWORD").expect("Could not find password in env");
     
-        let result = super::request_login(&client, username, password, true);
+        let result = super::request_login( username, password, true);
         println!("{result}");   
     }
 }
