@@ -1,4 +1,5 @@
 use regex::Regex;
+use console::style;
 
 /// Bearer token 
 pub struct Bearer {
@@ -139,6 +140,7 @@ pub fn login(username: String, password: String, debug: bool) -> Bearer {
 
     debug!("Matrix login response: {:#?}", response);
     if !response.status().is_success() {
+        println!("{}", style("Login failed").red().bold());
         crate::exit!(0, "Login exited with failure");
     }
 

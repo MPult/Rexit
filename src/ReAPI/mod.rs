@@ -2,6 +2,7 @@
 #![allow(non_snake_case)]
 pub mod images;
 pub mod users;
+pub mod rooms;
 mod login;
 
 pub use login::login;
