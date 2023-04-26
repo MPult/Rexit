@@ -1,9 +1,10 @@
 #![allow(dead_code)]
+#![allow(non_snake_case)]
 pub mod images;
 pub mod users;
+pub mod login;
 
 pub type Client = reqwest::blocking::Client;
-pub type Bearer = std::string::String;
 
 pub fn new_debug_client(debug: bool) -> Client {
     // Build the client
