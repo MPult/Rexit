@@ -5,7 +5,7 @@
 pub mod images;
 pub mod users;
 pub mod rooms;
-mod login;
+pub mod login;
 
 pub use login::login;
 pub use login::Bearer;
