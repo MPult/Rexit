@@ -7,7 +7,19 @@ use serde_json::Value;
 #[cached]
 pub fn id_to_displayname(id: String, debug: bool) -> String {
     // Create a Reqwest client
-    let client = crate::ReAPI::Client::new();
+    let client: reqwest::blocking::Client;
+    if debug {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
+            .build()
+            .expect("Error making Reqwest Client");
+    } else {
+        client = reqwest::blocking::Client::builder()
+            .cookie_store(true)
+            .build()
+            .expect("Error making Reqwest Client");
+    };
 
     // Request name from API
     let response = client
