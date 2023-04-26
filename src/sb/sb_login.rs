@@ -5,7 +5,7 @@ use crate::ReAPI;
 /// Performs the login, returns the bearer token
 pub fn request_login(client: &ReAPI::Client, username: String, password: String, debug: bool) -> String {
     // Get Reddits bearer token
-    let Bearer = ReAPI::login::login(username, password);
+    let Bearer = ReAPI::login(username, password);
 
     let bearer_str = Bearer.token();
 }
@@ -13,7 +13,6 @@ pub fn request_login(client: &ReAPI::Client, username: String, password: String,
 #[cfg(test)]
 mod tests {
     use crate::ReAPI;
-
 
     #[test]
     fn sb_request_login() {

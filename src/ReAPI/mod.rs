@@ -2,7 +2,10 @@
 #![allow(non_snake_case)]
 pub mod images;
 pub mod users;
-pub mod login;
+mod login;
+
+pub use login::login;
+pub use login::Bearer;
 
 pub type Client = reqwest::blocking::Client;
 
