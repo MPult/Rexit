@@ -11,9 +11,9 @@ pub struct Image {
 impl Image {
     pub fn export_to(&self, path: PathBuf) {
         let mut path = path;
-        path.push(self.id);
+        path.push(self.id.clone());
 
-        std::fs::write(path.with_extension(self.extension), self.data).unwrap();
+        std::fs::write(path.with_extension(self.extension.clone()), self.data.clone()).unwrap();
     }
 }
 
