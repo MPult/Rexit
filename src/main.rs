@@ -20,6 +20,7 @@ mod images;
 mod messages;
 mod macros;
 mod ReAPI;
+mod sb;
 
 use cli::{Cli, Parser};
 
