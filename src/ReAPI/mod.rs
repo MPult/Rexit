@@ -5,8 +5,6 @@ pub mod users;
 pub type Client = reqwest::blocking::Client;
 pub type Bearer = std::string::String;
 
-
-
 pub fn new_debug_client(debug: bool) -> Client {
     // Build the client
     let client: reqwest::blocking::Client;
