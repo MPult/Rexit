@@ -11,6 +11,10 @@ impl Bearer {
     pub fn token(&self) -> String {
         self.bearer.clone()
     }
+
+    pub fn new(token: String) -> Bearer {
+        Bearer { bearer: token }
+    }
 }
 
 impl std::fmt::Display for Bearer {

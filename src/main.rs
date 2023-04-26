@@ -14,7 +14,6 @@ use std::path::PathBuf;
 mod export;
 use export::decide_export;
 mod cli;
-mod login;
 mod id_translation;
 mod images;
 mod messages;
@@ -47,14 +46,16 @@ fn main() {
     }
 
     // Decide what auth flow to use
-    let bearer_token: String;
+    let bearer_token: ReAPI::Bearer;
     if args.token == true {
         // Use the bearer token flow
         trace!("Bearer token auth flow");
 
-        bearer_token = Password::new("Your Bearer Token")
-            .prompt()
-            .expect("Error reading bearer token");
+        bearer_token = ReAPI::Bearer::new(
+            Password::new("Your Bearer Token")
+                .prompt()
+                .expect("Error reading bearer token")
+        );
     } else {
         // Use the username password auth flow
         trace!("Password auth flow");
@@ -69,7 +70,7 @@ fn main() {
             .prompt()
             .expect("Error reading password");
 
-        bearer_token = login::request_login(username.to_owned(), password.to_owned(), args.debug);
+        bearer_token = ReAPI::login(username.to_owned(), password.to_owned(), args.debug);
     }
 
     // Handle output folder stuff
@@ -88,9 +89,9 @@ fn main() {
     }
 
     // Get list of rooms
-    let rooms = messages::list_rooms(bearer_token.clone(), args.debug);
+    let rooms = messages::list_rooms(bearer_token.token(), args.debug);
 
-    let all_chats = messages::iter_rooms(rooms, bearer_token, args.debug, args.images);
+    let all_chats = messages::iter_rooms(rooms, bearer_token.token(), args.debug, args.images);
 
     decide_export(all_chats, args);
 }
