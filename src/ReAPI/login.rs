@@ -1,24 +1,27 @@
 use regex::Regex;
 
+/// Bearer token 
 pub struct Bearer {
     bearer: String,
 }
 
 impl Bearer {
+    /// Returns the raw token as a string
     pub fn token(&self) -> String {
         self.bearer.clone()
     }
 }
 
 impl std::fmt::Display for Bearer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         println!("{}", self.bearer);
         
         std::fmt::Result::Ok(())
     }
 }
 
-pub fn login(username: String, password: String) -> Bearer {
+/// Log into Reddit returning the Bearer
+pub fn login(username: String, password: String, debug: bool) -> Bearer {
     // URL encode the password & username
     let encoded_password: String;
     let username = urlencoding::encode(&username);
@@ -32,7 +35,7 @@ pub fn login(username: String, password: String) -> Bearer {
     }
 
     // Obtain the CSRF token
-    let client = super::new_client();
+    let client = super::new_debug_client(debug);
 
     // Send an HTTP GET request to get the CSRF token
     let resp = client
@@ -148,7 +151,7 @@ mod tests {
     fn login() {
         let (username, password) = get_login();
 
-        super::login(username, password);
+        super::login(username, password, false);
     }
 
     fn get_login() -> (String, String) {
