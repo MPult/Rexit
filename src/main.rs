@@ -19,6 +19,7 @@ mod id_translation;
 mod images;
 mod messages;
 mod macros;
+mod ReAPI;
 
 use cli::{Cli, Parser};
 
