@@ -63,6 +63,7 @@ pub fn get_image(url: String, debug: bool) -> Image {
 fn parse_matrix_image_url(url: &str) -> (String, String) {
     let url = reqwest::Url::parse(url).unwrap(); // I assume that all urls given to this function are valid
 
+    println!("{}", url);
     let output_url =
         reqwest::Url::parse("https://matrix.redditspace.com/_matrix/media/r0/download/reddit.com/").unwrap();
 
@@ -77,6 +78,12 @@ fn parse_matrix_image_url(url: &str) -> (String, String) {
 mod tests {
     #[test]
     fn get_image() {
-        super::get_image("mxc://dwdprq7pxbva1".to_string(), true);
+        let image = super::get_image("mxc://reddit.com/dwdprq7pxbva1/".to_string(), true);
+
+        image.export_to(std::path::PathBuf::from("./test_resources/test_cases/ReAPI/Images/get_images/"));
+
+        assert!(std::path::PathBuf::from("./test_resources/test_cases/ReAPI/Images/get_images/dwdprq7pxbva1.gif").exists());
+
+        std::fs::remove_file("./test_resources/test_cases/ReAPI/Images/get_images/dwdprq7pxbva1.gif").expect("Could not remove downloaded file");
     }
 }
