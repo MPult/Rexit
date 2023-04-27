@@ -49,43 +49,53 @@ struct InternalImageInfo {
 
 pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
+    let mut batch: String = String::new();
+    // Loop over the batching
+    loop {
 
-    let url = format!(
-        "https://matrix.redditspace.com/_matrix/client/r0/rooms/{}/messages?limit=10000&dir=b",
-        id
-    );
+        let url = format!(
+            "https://matrix.redditspace.com/_matrix/client/r0/rooms/{id}/messages?limit=10000&dir=b&from={batch}");
 
-    // Send request to get messages
-    let response = client
-        .reqwest_client
-        .get(url)
-        .header("Authorization", format!("Bearer {}", client.bearer_token()))
-        .send()
-        .expect("Failed to send HTTP request; to obtain messages");
+        // Send request to get messages
+        let response = client
+            .reqwest_client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", client.bearer_token()))
+            .send()
+            .expect("Failed to send HTTP request; to obtain messages");
 
-    // Deserialize response
-    let messages: Result<InternalMessages, serde_json::Error> =
-        serde_json::from_str(response.text().unwrap().as_str());
-    let messages = messages.unwrap();
-    output.reserve(messages.chunk.len());
+        // Deserialize response
+        let messages: Result<InternalMessages, serde_json::Error> =
+            serde_json::from_str(response.text().unwrap().as_str());
+        let messages = messages.unwrap();
+        output.reserve(messages.chunk.len());
 
-    // Iterate over messages
-    for message in messages.chunk {
-        if let Some(text) = message.content.body {
-            output.push(Message {
-                author: message.sender,
-                timestamp: unix_millis_to_utc(message.timestamp),
-                content: Content::Message(text),
-            })
-        } else if let Some(image_url) = message.content.url {
-            output.push(Message {
-                author: message.sender,
-                timestamp: unix_millis_to_utc(message.timestamp),
-                content: Content::Image(super::images::get_image(&client, image_url)),
-            })
+        // Iterate over messages
+        for message in messages.chunk {
+            if let Some(text) = message.content.body {
+                output.push(Message {
+                    author: message.sender,
+                    timestamp: unix_millis_to_utc(message.timestamp),
+                    content: Content::Message(text),
+                })
+            } else if let Some(image_url) = message.content.url {
+                output.push(Message {
+                    author: message.sender,
+                    timestamp: unix_millis_to_utc(message.timestamp),
+                    content: Content::Image(super::images::get_image(&client, image_url)),
+                })
+            }
+        }
+        
+        // Check for end condition
+        if messages.end == "t0_0" {
+            debug!("Found messages end");
+            break;
+        } else {
+            // Update new batch variable
+            batch = messages.end;
         }
     }
-
     return output;
 }
 
@@ -107,8 +117,8 @@ mod tests {
 
         let rooms = super::super::download_rooms(&client);
 
-        super::list_messages(&client, rooms[0].clone().id);
-
+        let messages =super::list_messages(&client, rooms[1].clone().id);
+        println!("{:#?}", messages);
         panic!();
     }
 
