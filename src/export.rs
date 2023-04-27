@@ -11,11 +11,10 @@ use crate::messages::AllChats;
 pub enum ExportFormat {
     JSON,
     CSV,
-    TXT
+    TXT,
 }
 
 /// Function to check what export format is desired and calls the appropriate export function.
-#[allow(dead_code)]
 pub fn decide_export(all_chats: AllChats, cli: Cli) {
     // Split the comma separated format cli args into a array
     let formats: Vec<&str> = cli.formats.split(",").collect();

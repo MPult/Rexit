@@ -7,4 +7,7 @@ test:
     cargo test
 
 test-creds:
-    cargo test --include-ignored
+    cargo test -- --include-ignored
+
+doc: 
+    cargo doc --no-deps --open

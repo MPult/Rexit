@@ -13,12 +13,13 @@ use std::path::PathBuf;
 // import other files
 mod export;
 use export::decide_export;
-mod cli;
-mod id_translation;
-mod images;
-mod messages;
-mod macros;
 mod ReAPI;
+<<<<<<< HEAD
+=======
+mod cli;
+mod macros;
+mod messages;
+>>>>>>> cf671a7 (everything)
 
 use cli::{Cli, Parser};
 
@@ -38,6 +39,9 @@ fn main() {
     // Parse the CLI args
     let args = Cli::parse();
 
+    // Create an ReAPI client
+    let client = ReAPI::new_client(args.debug);
+
     if args.debug {
         println!("{}\n{}", 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
@@ -50,10 +54,10 @@ fn main() {
         // Use the bearer token flow
         trace!("Bearer token auth flow");
 
-        bearer_token = ReAPI::Bearer::new(
+        bearer_token = ReAPI::Bearer::from(
             Password::new("Your Bearer Token")
                 .prompt()
-                .expect("Error reading bearer token")
+                .expect("Error reading bearer token"),
         );
     } else {
         // Use the username password auth flow
@@ -69,12 +73,11 @@ fn main() {
             .prompt()
             .expect("Error reading password");
 
-        bearer_token = ReAPI::login(username.to_owned(), password.to_owned(), args.debug);
+        bearer_token = ReAPI::login(&client, username.to_owned(), password.to_owned());
     }
 
     // Handle output folder stuff
     // Deletes ./out (we append the batches so this is necessary)
-
     if PathBuf::from("./out").exists() {
         std::fs::remove_dir_all("./out").expect("Error deleting out folder");
     }
@@ -83,12 +86,12 @@ fn main() {
     std::fs::create_dir("./out").unwrap();
 
     // Make sure there is an images folder to output to if images is true
-    if args.images && !PathBuf::from("./out/images").exists() {
+    if args.images {
         std::fs::create_dir("./out/images").unwrap();
     }
 
     // Get list of rooms
-    let rooms = messages::list_rooms(bearer_token.token(), args.debug);
+    let rooms = ReAPI::list_rooms(&client, bearer_token.clone());
 
     let all_chats = messages::iter_rooms(rooms, bearer_token.token(), args.debug, args.images);
 

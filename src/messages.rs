@@ -1,24 +1,14 @@
-use super::id_translation::id_to_displayname;
-use super::images;
+use crate::ReAPI;
 use chrono::SecondsFormat::Secs;
 use chrono::{TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::time::Duration;
-
-/// Struct for a singular message.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Message {
-    pub author: String,
-    pub message: String,
-    pub timestamp: String,
-}
 
 /// Struct containing a chat/room.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Chat {
     pub id: String,
-    pub messages: Vec<Message>,
+    pub messages: Vec<ReAPI::Message>,
     pub next_batch: String,
 }
 
@@ -28,61 +18,18 @@ pub struct AllChats {
     pub chats: Vec<Chat>,
 }
 
-/// Returns list of all rooms that the user is joined to as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3directorylistroomroomid)
-pub fn list_rooms(bearer_token: String, debug: bool) -> Vec<serde_json::Value> {
-    // Create a Reqwest client
-    let client: reqwest::blocking::Client;
-    if debug {
-        client = reqwest::blocking::Client::builder()
-            .cookie_store(true)
-            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
-            .timeout(Duration::from_secs(60))
-            .build()
-            .expect("Error making Reqwest Client");
-    } else {
-        client = reqwest::blocking::Client::builder()
-            .cookie_store(true)
-            .timeout(Duration::from_secs(60))
-            .build()
-            .expect("Error making Reqwest Client");
-    }
-
-    let resp = client
-        .get("https://matrix.redditspace.com/_matrix/client/v3/joined_rooms")
-        .header("Authorization", format!("Bearer {}", bearer_token))
-        .send()
-        .expect("Failed to send HTTP request; to obtain rooms");
-
-    let body = resp.text().expect("Error parsing body");
-    let json: Value = serde_json::from_str(&body).expect("Error parsing Rooms list JSON");
-    let rooms = json["joined_rooms"]
-        .as_array()
-        .expect("Error parsing array");
-
-    info!("Found {} room(s) ", rooms.len());
-    return rooms.to_vec();
-}
-
 /// Returns a Chat struct for this room as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3roomsroomidmessages)
-pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: bool, export_images: bool) -> Chat {
+pub fn get_messages(
+    bearer_token: String,
+    room_id: &str,
+    since: String,
+    debug: bool,
+    export_images: bool,
+) -> Chat {
     info!("Getting messages for room: {room_id}");
 
     // Create a Reqwest client
-    let client: reqwest::blocking::Client;
-    if debug {
-        client = reqwest::blocking::Client::builder()
-            .cookie_store(true)
-            .danger_accept_invalid_certs(true) // Used in development to trust a proxy
-            .timeout(Duration::from_secs(60))
-            .build()
-            .expect("Error making Reqwest Client");
-    } else {
-        client = reqwest::blocking::Client::builder()
-            .cookie_store(true)
-            .timeout(Duration::from_secs(60))
-            .build()
-            .expect("Error making Reqwest Client");
-    }
+    let client = ReAPI::new_client(debug);
 
     let url;
 
@@ -113,6 +60,7 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
     for message in json["chunk"].as_array().unwrap() {
         // Check if it is a text/image
         if message["type"] == "m.room.message" {
+            println!("message: {}", message);
             // Parse the unix timestamp and convert to ISO
             let timestamp = message["origin_server_ts"]
                 .as_i64()
@@ -129,7 +77,7 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
             let message_content: String;
             if export_images && message["content"]["msgtype"] == "m.image" {
                 message_content = message["content"]["url"].as_str().unwrap().to_string();
-                images::export_image(&client, message_content.clone());
+                ReAPI::get_image(&client, message_content.clone());
             } else {
                 let tmp = message["content"]["body"].as_str();
                 if tmp.is_none() {
@@ -137,14 +85,14 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
                     continue;
                 }
                 message_content = tmp.unwrap().to_string();
-            }
 
-            let message_struct = Message {
-                author: id_to_displayname(message["senders"].to_string(), debug),
-                message: message_content,
-                timestamp: timestamp,
-            };
-            chat.messages.push(message_struct);
+                let message_struct = ReAPI::Message {
+                    author: ReAPI::get_user(&client, message["sender"].to_string()).displayname,
+                    message: message_content,
+                    timestamp: timestamp,
+                };
+                chat.messages.push(message_struct);
+            }
         }
     }
     // Append next batch to chat
@@ -154,7 +102,12 @@ pub fn get_messages(bearer_token: String, room_id: &str, since: String, debug: b
 }
 
 /// Iterate over all rooms to return chats
-pub fn iter_rooms(rooms: Vec<serde_json::Value>, bearer: String, debug: bool, export_images: bool) -> AllChats {
+pub fn iter_rooms(
+    rooms: Vec<ReAPI::Room>,
+    bearer: String,
+    debug: bool,
+    export_images: bool,
+) -> AllChats {
     let mut all_chats = AllChats { chats: Vec::new() };
 
     // Iterate over rooms and request their messages
@@ -163,13 +116,8 @@ pub fn iter_rooms(rooms: Vec<serde_json::Value>, bearer: String, debug: bool, ex
 
         while next_batch != "t0_0" {
             let mut found_chat = false;
-            let chat_struct = get_messages(
-                bearer.clone(),
-                room.as_str().unwrap(),
-                next_batch,
-                debug,
-                export_images
-            );
+            let chat_struct =
+                get_messages(bearer.clone(), &room.id, next_batch, debug, export_images);
             next_batch = chat_struct.next_batch.clone();
 
             // Check if a chat with that ID already exits; if yes then append the messages
