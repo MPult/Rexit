@@ -14,12 +14,9 @@ use std::path::PathBuf;
 mod export;
 use export::decide_export;
 mod ReAPI;
-<<<<<<< HEAD
-=======
 mod cli;
 mod macros;
 mod messages;
->>>>>>> cf671a7 (everything)
 
 use cli::{Cli, Parser};
 
