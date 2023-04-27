@@ -5,7 +5,6 @@ use std::fs::OpenOptions;
 use std::io::Write;
 
 use crate::cli::Cli;
-use crate::messages::AllChats;
 
 #[allow(dead_code)]
 pub enum ExportFormat {

@@ -17,7 +17,11 @@ pub fn get_user(client: &Client, id: String) -> User {
     println!("{}", id);
     let url = format!("https://matrix.redditspace.com/_matrix/client/r0/profile/{id}/displayname",);
 
-    let response = client.get(url).send().expect("Failed to send HTTP request");
+    let response = client
+        .reqwest_client
+        .get(url)
+        .send()
+        .expect("Failed to send HTTP request");
 
     let value: serde_json::Value = serde_json::from_str(response.text().unwrap().as_str()).unwrap();
 

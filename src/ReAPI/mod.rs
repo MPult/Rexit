@@ -3,24 +3,25 @@
 
 mod images;
 mod login;
+mod messages;
 mod rooms;
 mod users;
 
-pub use login::login;
-pub use login::Bearer;
-
-pub use images::get_image;
 pub use images::Image;
 
-pub use rooms::list_messages;
 pub use rooms::list_rooms;
-pub use rooms::Message;
 pub use rooms::Room;
+
+pub use messages::Content;
+pub use messages::Message;
 
 pub use users::get_user;
 pub use users::User;
 
-pub type Client = reqwest::blocking::Client;
+pub struct Client {
+    reqwest_client: reqwest::blocking::Client,
+    bearer: Option<String>,
+}
 
 pub fn new_client(debug: bool) -> Client {
     // Build the client
@@ -40,5 +41,8 @@ pub fn new_client(debug: bool) -> Client {
             .expect("Error making Reqwest Client");
     }
 
-    client
+    Client {
+        reqwest_client: client,
+        bearer: None,
+    }
 }

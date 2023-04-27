@@ -4,7 +4,7 @@ use cached::SizedCache;
 use console::style;
 use std::path::PathBuf;
 
-#[derive(std::hash::Hash, Clone)]
+#[derive(std::hash::Hash, Clone, Debug)]
 pub struct Image {
     pub extension: String,
     pub id: String,
@@ -22,6 +22,14 @@ impl Image {
         )
         .unwrap();
     }
+
+    pub fn from(id: String, extension: String, data: Vec<u8>) -> Image {
+        Image {
+            extension,
+            id,
+            data,
+        }
+    }
 }
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
@@ -34,7 +42,7 @@ pub fn get_image(client: &Client, url: String) -> Image {
     info!(target: "get_image", "Getting image: {}", url);
     let (url, id) = parse_matrix_image_url(url.as_str());
 
-    let data = client.get(url).send().unwrap();
+    let data = client.reqwest_client.get(url).send().unwrap();
 
     Image {
         extension: get_image_extension(&data.headers()),

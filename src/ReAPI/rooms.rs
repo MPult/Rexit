@@ -1,31 +1,37 @@
 use super::Client;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
 pub struct Room {
     pub id: String,
+    messages: Option<Vec<super::Message>>,
 }
 
 impl Room {
     pub fn from(id: String) -> Room {
-        Room { id }
+        Room { id, messages: None }
+    }
+
+    pub fn messages(&mut self, client: &Client) -> Vec<super::Message> {
+        if self.messages.is_some() {
+            return self.messages.clone().unwrap();
+        }
+
+        self.get_messages(client, self.to_owned());
+        return self.messages.clone().unwrap();
+    }
+
+    fn get_messages(&mut self, client: &Client, room: Room) {
+        self.messages = Some(super::messages::list_messages(client, room));
     }
 }
 
-/// Struct for a singular message.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Message {
-    pub author: String,
-    pub message: String,
-    pub timestamp: String,
-}
-
 /// Returns list of all rooms that the user is joined to as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3directorylistroomroomid)
-pub fn list_rooms(client: &Client, bearer_token: super::Bearer) -> Vec<Room> {
+pub fn list_rooms(client: &Client) -> Vec<Room> {
     let resp = client
+        .reqwest_client
         .get("https://matrix.redditspace.com/_matrix/client/v3/joined_rooms")
-        .header("Authorization", format!("Bearer {}", bearer_token.token()))
+        .header("Authorization", format!("Bearer {}", client.bearer_token()))
         .send()
         .expect("Failed to send HTTP request; to obtain rooms");
 
@@ -50,21 +56,17 @@ pub fn list_rooms(client: &Client, bearer_token: super::Bearer) -> Vec<Room> {
     return rooms;
 }
 
-pub fn list_messages(_client: &Client) {
-    
-} // -> Vec<Message>
-
 #[cfg(test)]
 mod tests {
     #[test]
     #[ignore = "creds"]
     fn list_rooms() {
         let (username, password) = get_login();
-        let client = super::super::new_client(true);
+        let mut client = super::super::new_client(true);
 
-        let bearer = super::super::login(&client, username, password);
+        client.login(username, password);
 
-        let rooms = super::list_rooms(&client, bearer);
+        let rooms = super::list_rooms(&client);
 
         println!("{:?}", rooms);
     }

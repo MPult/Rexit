@@ -87,7 +87,7 @@ pub fn get_messages(
                 message_content = tmp.unwrap().to_string();
 
                 let message_struct = ReAPI::Message {
-                    author: ReAPI::get_user(&client, message["sender"].to_string()).displayname,
+                    author: ReAPI::get_user(&client, message["sender"].to_string().replace("\"", "")).displayname,
                     message: message_content,
                     timestamp: timestamp,
                 };

@@ -11,12 +11,11 @@ use std::env;
 use std::path::PathBuf;
 
 // import other files
-mod export;
-use export::decide_export;
+// mod export;
+// use export::decide_export;
 mod ReAPI;
 mod cli;
 mod macros;
-mod messages;
 
 use cli::{Cli, Parser};
 
@@ -37,7 +36,7 @@ fn main() {
     let args = Cli::parse();
 
     // Create an ReAPI client
-    let client = ReAPI::new_client(args.debug);
+    let mut client = ReAPI::new_client(args.debug);
 
     if args.debug {
         println!("{}\n{}", 
@@ -46,12 +45,11 @@ fn main() {
     }
 
     // Decide what auth flow to use
-    let bearer_token: ReAPI::Bearer;
     if args.token == true {
         // Use the bearer token flow
         trace!("Bearer token auth flow");
 
-        bearer_token = ReAPI::Bearer::from(
+        client.login_with_token(
             Password::new("Your Bearer Token")
                 .prompt()
                 .expect("Error reading bearer token"),
@@ -70,7 +68,7 @@ fn main() {
             .prompt()
             .expect("Error reading password");
 
-        bearer_token = ReAPI::login(&client, username.to_owned(), password.to_owned());
+        client.login(username.to_owned(), password.to_owned());
     }
 
     // Handle output folder stuff
@@ -88,9 +86,14 @@ fn main() {
     }
 
     // Get list of rooms
-    let rooms = ReAPI::list_rooms(&client, bearer_token.clone());
+    let rooms = ReAPI::list_rooms(&client);
 
-    let all_chats = messages::iter_rooms(rooms, bearer_token.token(), args.debug, args.images);
+    let chats: Vec<Vec<ReAPI::Message>> = rooms
+        .iter()
+        .map(|room| room.to_owned().messages(&client))
+        .collect();
 
-    decide_export(all_chats, args);
+    println!("{:?}", chats);
+
+    // decide_export(chats, args);
 }

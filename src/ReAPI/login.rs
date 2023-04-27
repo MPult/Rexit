@@ -1,77 +1,70 @@
-use super::Client;
 use console::style;
 use regex::Regex;
 
-/// Bearer token
-#[derive(Clone, Debug)]
-pub struct Bearer {
-    bearer: String,
-}
-
-impl Bearer {
-    /// Returns the raw token as a string
-    pub fn token(&self) -> String {
-        self.bearer.clone()
+impl super::Client {
+    pub fn logged_in(&self) -> bool {
+        self.bearer.is_some()
     }
 
-    pub fn from(token: String) -> Bearer {
-        Bearer { bearer: token }
-    }
-}
-
-impl std::fmt::Display for Bearer {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        println!("{}", self.bearer);
-
-        std::fmt::Result::Ok(())
-    }
-}
-
-/// Log into Reddit returning the Bearer
-pub fn login(client: &Client, username: String, password: String) -> Bearer {
-    // URL encode the password & username
-    let encoded_password: String;
-    let username = urlencoding::encode(&username);
-
-    // Reddit is doing a weird thing where * is not urlencoded. Sorry for everyone that has * and %2A in their password
-    if password.contains("*") {
-        debug!("Password has *; URL-encode was rewritten");
-        encoded_password = password.replace("%2A", "*");
-    } else {
-        encoded_password = urlencoding::encode(&password).into_owned();
-    }
-
-    // Send an HTTP GET request to get the CSRF token
-    let resp = client
-        .get("https://www.reddit.com/login/")
-        .send()
-        .expect("Failed to send HTTP request; to obtain CSRF token");
-
-    debug!("CSRF Request Response: {:?}", resp);
-    let body = resp.text();
-    let body = body.expect("Failed to read response body");
-
-    // Regex to find the CSRF token in the body of the HTML
-    let csrf =
-        Regex::new(r#"<input\s+type="hidden"\s+name="csrf_token"\s+value="([^"]*)""#).unwrap();
-
-    // For the love of god do not touch this code ever; i made a deal with the devil to make this work
-    let mut csrf_token: String = String::default();
-    for i in csrf.captures_iter(body.as_str()) {
-        for i in i.get(1).iter() {
-            csrf_token = String::from(i.as_str().clone());
-            debug!("CSRF Token: {}", csrf_token);
+    pub fn bearer_token(&self) -> String {
+        if let Some(token) = self.bearer.clone() {
+            return token.clone();
         }
+
+        println!("{}", style("You are not logged in").red().bold());
+        crate::exit!(0);
     }
 
-    // Form data for actual login
-    let form_data = format!(
-        "csrf_token={}&otp=&password={}&dest=https%3A%2F%2Fwww.reddit.com&username={}",
-        csrf_token, encoded_password, username
-    );
+    pub fn login_with_token(&mut self, bearer: String) {
+        self.bearer = Some(bearer);
+    }
 
-    // Perform the actual login post request
-    let x = client
+    /// Log into Reddit returning the Bearer
+    pub fn login(&mut self, username: String, password: String) {
+        // URL encode the password & username
+        let encoded_password: String;
+        let username = urlencoding::encode(&username);
+
+        // Reddit is doing a weird thing where * is not urlencoded. Sorry for everyone that has * and %2A in their password
+        if password.contains("*") {
+            debug!("Password has *; URL-encode was rewritten");
+            encoded_password = password.replace("%2A", "*");
+        } else {
+            encoded_password = urlencoding::encode(&password).into_owned();
+        }
+
+        // Send an HTTP GET request to get the CSRF token
+        let resp = self
+            .reqwest_client
+            .get("https://www.reddit.com/login/")
+            .send()
+            .expect("Failed to send HTTP request; to obtain CSRF token");
+
+        debug!("CSRF Request Response: {:?}", resp);
+        let body = resp.text();
+        let body = body.expect("Failed to read response body");
+
+        // Regex to find the CSRF token in the body of the HTML
+        let csrf =
+            Regex::new(r#"<input\s+type="hidden"\s+name="csrf_token"\s+value="([^"]*)""#).unwrap();
+
+        // For the love of god do not touch this code ever; i made a deal with the devil to make this work
+        let mut csrf_token: String = String::default();
+        for i in csrf.captures_iter(body.as_str()) {
+            for i in i.get(1).iter() {
+                csrf_token = String::from(i.as_str().clone());
+                debug!("CSRF Token: {}", csrf_token);
+            }
+        }
+
+        // Form data for actual login
+        let form_data = format!(
+            "csrf_token={}&otp=&password={}&dest=https%3A%2F%2Fwww.reddit.com&username={}",
+            csrf_token, encoded_password, username
+        );
+
+        // Perform the actual login post request
+        let x = self.reqwest_client
         .post("https://www.reddit.com/login")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .header("Sec-Ch-Ua", "\"Not:A-Brand\";v=\"99\", \"Chromium\";v=\"112\"")
@@ -89,10 +82,10 @@ pub fn login(client: &Client, username: String, password: String) -> Bearer {
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-    println!("{}", x.text().unwrap());
+        println!("{}", x.text().unwrap());
 
-    // Request / to get the bearer token
-    let response = client
+        // Request / to get the bearer token
+        let response = self.reqwest_client
         .get("https://www.reddit.com/")
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
         .header("Accept-Encoding", "gzip, deflate")
@@ -106,26 +99,25 @@ pub fn login(client: &Client, username: String, password: String) -> Bearer {
         .send()
         .expect("Error getting bearer token");
 
-    // Extract the Bearer Token from the JSON response
-    let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
+        // Extract the Bearer Token from the JSON response
+        let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
 
-    let mut bearer_token: String = String::default();
-    for i in bearer_regex.captures_iter(&response.text().unwrap()) {
-        for i in i.get(1).iter() {
-            bearer_token = String::from(i.as_str().clone());
-            debug!("Bearer Token: {}", bearer_token.trim());
+        let mut bearer_token: String = String::default();
+        for i in bearer_regex.captures_iter(&response.text().unwrap()) {
+            for i in i.get(1).iter() {
+                bearer_token = String::from(i.as_str().clone());
+                debug!("Bearer Token: {}", bearer_token.trim());
+            }
         }
-    }
 
-    // Login to matrix.reddit.com using the bearer for reddit.com
-    let data = format!(
-        "{{\"type\":\"com.reddit.token\",\"token\":\"{bearer_token}\",\"initial_device_display_name\":\"Reddit Web Client\"}}",
+        // Login to matrix.reddit.com using the bearer for reddit.com
+        let data = format!(
+        "{{\"type\":\"com.reddit.token\",\"token\":\"{bearer_token}\",\"initial_device_display_name\":\"Reddit Web Client\"}}"
+        );
 
-    );
+        debug!("Matrix request body: {:#?}", data);
 
-    debug!("Matrix request body: {:#?}", data);
-
-    let response = client
+        let response = self.reqwest_client
         .post("https://matrix.redditspace.com/_matrix/client/r0/login")
         .header("Content-Type", "application/json")
         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
@@ -141,14 +133,13 @@ pub fn login(client: &Client, username: String, password: String) -> Bearer {
         .send()
         .expect("Failed to send HTTP request; to login to matrix");
 
-    debug!("Matrix login response: {:#?}", response);
-    if !response.status().is_success() {
-        println!("{}", style("Login failed").red().bold());
-        crate::exit!(0, "Login exited with failure");
-    }
+        debug!("Matrix login response: {:#?}", response);
+        if !response.status().is_success() {
+            println!("{}", style("Login failed").red().bold());
+            crate::exit!(0, "Login exited with failure");
+        }
 
-    Bearer {
-        bearer: bearer_token,
+        self.bearer = Some(bearer_token);
     }
 }
 
@@ -157,10 +148,10 @@ mod tests {
     #[test]
     #[ignore = "creds"]
     fn login() {
-        let client = super::super::new_client(true);
+        let mut client = super::super::new_client(true);
         let (username, password) = get_login();
 
-        super::login(&client, username, password);
+        client.login(username, password);
     }
 
     fn get_login() -> (String, String) {
