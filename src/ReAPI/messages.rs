@@ -1,5 +1,4 @@
 use super::Client;
-use super::Room;
 use chrono::{TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -48,12 +47,12 @@ struct InternalImageInfo {
     mimetype: String,
 }
 
-pub fn list_messages(client: &Client, room: Room) -> Vec<Message> {
+pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
 
     let url = format!(
         "https://matrix.redditspace.com/_matrix/client/r0/rooms/{}/messages?limit=10000&dir=b",
-        room.id
+        id
     );
 
     // Send request to get messages
@@ -106,9 +105,9 @@ mod tests {
 
         client.login(username, password);
 
-        let rooms = super::super::list_rooms(&client);
+        let rooms = super::super::download_rooms(&client);
 
-        super::list_messages(&client, rooms[0].clone());
+        super::list_messages(&client, rooms[0].clone().id);
 
         panic!();
     }

@@ -11,8 +11,7 @@ use std::env;
 use std::path::PathBuf;
 
 // import other files
-// mod export;
-// use export::decide_export;
+mod export;
 mod ReAPI;
 mod cli;
 mod macros;
@@ -86,14 +85,10 @@ fn main() {
     }
 
     // Get list of rooms
-    let rooms = ReAPI::list_rooms(&client);
+    let rooms = ReAPI::download_rooms(&client);
 
-    let chats: Vec<Vec<ReAPI::Message>> = rooms
-        .iter()
-        .map(|room| room.to_owned().messages(&client))
-        .collect();
-
-    println!("{:?}", chats);
-
-    // decide_export(chats, args);
+    // Export
+    for room in rooms {
+        export::export_room_chats(room.to_owned());
+    }
 }

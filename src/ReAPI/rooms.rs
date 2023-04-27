@@ -8,26 +8,22 @@ pub struct Room {
 }
 
 impl Room {
-    pub fn from(id: String) -> Room {
-        Room { id, messages: None }
+    fn download(id: String, client: &Client) -> Room {
+        Room { id: id.clone(), messages: download_messages(&client, id.clone())}
     }
 
-    pub fn messages(&mut self, client: &Client) -> Vec<super::Message> {
-        if self.messages.is_some() {
-            return self.messages.clone().unwrap();
-        }
-
-        self.get_messages(client, self.to_owned());
+    pub fn messages(&self) -> Vec<super::Message> {
         return self.messages.clone().unwrap();
-    }
-
-    fn get_messages(&mut self, client: &Client, room: Room) {
-        self.messages = Some(super::messages::list_messages(client, room));
     }
 }
 
+
+fn download_messages(client: &Client, id: String) ->  Option<Vec<super::Message>>{
+    Some(super::messages::list_messages(client, id))
+}
+
 /// Returns list of all rooms that the user is joined to as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3directorylistroomroomid)
-pub fn list_rooms(client: &Client) -> Vec<Room> {
+pub fn download_rooms(client: &Client) -> Vec<Room> {
     let resp = client
         .reqwest_client
         .get("https://matrix.redditspace.com/_matrix/client/v3/joined_rooms")
@@ -48,7 +44,7 @@ pub fn list_rooms(client: &Client) -> Vec<Room> {
     // Move rooms into a Vec<Room>
     let rooms: Vec<Room> = rooms
         .iter()
-        .map(|room| Room::from(room.to_string().replace("\"", "")))
+        .map(|room| Room::download(room.to_string().replace("\"", ""), client))
         .collect();
 
     info!("Found {} room(s) ", rooms.len());
@@ -66,7 +62,7 @@ mod tests {
 
         client.login(username, password);
 
-        let rooms = super::list_rooms(&client);
+        let rooms = super::download_rooms(&client);
 
         println!("{:?}", rooms);
     }

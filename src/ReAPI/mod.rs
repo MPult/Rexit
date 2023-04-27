@@ -9,7 +9,7 @@ mod users;
 
 pub use images::Image;
 
-pub use rooms::list_rooms;
+pub use rooms::download_rooms;
 pub use rooms::Room;
 
 pub use messages::Content;
