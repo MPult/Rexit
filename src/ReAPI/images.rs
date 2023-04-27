@@ -105,16 +105,16 @@ mod tests {
         );
 
         image.export_to(std::path::PathBuf::from(
-            "./test_resources/test_cases/ReAPI/Images/get_images/",
+            "./test_resources/test_cases/ReAPI/images/get_images/",
         ));
 
         assert!(std::path::PathBuf::from(
-            "./test_resources/test_cases/ReAPI/Images/get_images/dwdprq7pxbva1.gif"
+            "./test_resources/test_cases/ReAPI/images/get_images/dwdprq7pxbva1.gif"
         )
         .exists());
 
         std::fs::remove_file(
-            "./test_resources/test_cases/ReAPI/Images/get_images/dwdprq7pxbva1.gif",
+            "./test_resources/test_cases/ReAPI/images/get_images/dwdprq7pxbva1.gif",
         )
         .expect("Could not remove downloaded file");
     }
