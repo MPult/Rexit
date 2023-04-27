@@ -1,18 +1,28 @@
 //! Reddit matrix api
+#![allow(non_snake_case, dead_code)]
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-pub mod images;
-pub mod users;
-pub mod rooms;
-pub mod login;
+mod images;
+mod login;
+mod rooms;
+mod users;
 
 pub use login::login;
 pub use login::Bearer;
 
+pub use images::get_image;
+pub use images::Image;
+
+pub use rooms::list_messages;
+pub use rooms::list_rooms;
+pub use rooms::Message;
+pub use rooms::Room;
+
+pub use users::get_user;
+pub use users::User;
+
 pub type Client = reqwest::blocking::Client;
 
-pub fn new_debug_client(debug: bool) -> Client {
+pub fn new_client(debug: bool) -> Client {
     // Build the client
     let client: reqwest::blocking::Client;
     if debug {
@@ -29,15 +39,6 @@ pub fn new_debug_client(debug: bool) -> Client {
             .build()
             .expect("Error making Reqwest Client");
     }
-
-    client
-}
-
-pub fn new_client() -> Client {
-    let client = reqwest::blocking::Client::builder()
-            .cookie_store(true)
-            .build()
-            .expect("Error making Reqwest Client"); 
 
     client
 }

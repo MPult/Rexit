@@ -1,7 +1,9 @@
-use regex::Regex;
+use super::Client;
 use console::style;
+use regex::Regex;
 
-/// Bearer token 
+/// Bearer token
+#[derive(Clone, Debug)]
 pub struct Bearer {
     bearer: String,
 }
@@ -12,7 +14,7 @@ impl Bearer {
         self.bearer.clone()
     }
 
-    pub fn new(token: String) -> Bearer {
+    pub fn from(token: String) -> Bearer {
         Bearer { bearer: token }
     }
 }
@@ -20,13 +22,13 @@ impl Bearer {
 impl std::fmt::Display for Bearer {
     fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         println!("{}", self.bearer);
-        
+
         std::fmt::Result::Ok(())
     }
 }
 
 /// Log into Reddit returning the Bearer
-pub fn login(username: String, password: String, debug: bool) -> Bearer {
+pub fn login(client: &Client, username: String, password: String) -> Bearer {
     // URL encode the password & username
     let encoded_password: String;
     let username = urlencoding::encode(&username);
@@ -38,9 +40,6 @@ pub fn login(username: String, password: String, debug: bool) -> Bearer {
     } else {
         encoded_password = urlencoding::encode(&password).into_owned();
     }
-
-    // Obtain the CSRF token
-    let client = super::new_debug_client(debug);
 
     // Send an HTTP GET request to get the CSRF token
     let resp = client
@@ -148,22 +147,26 @@ pub fn login(username: String, password: String, debug: bool) -> Bearer {
         crate::exit!(0, "Login exited with failure");
     }
 
-    Bearer { bearer: bearer_token }
+    Bearer {
+        bearer: bearer_token,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
+    #[ignore = "creds"]
     fn login() {
+        let client = super::super::new_client(true);
         let (username, password) = get_login();
 
-        super::login(username, password, false);
+        super::login(&client, username, password);
     }
 
     fn get_login() -> (String, String) {
         let username = std::env::var("REXIT_USERNAME").expect("Could not find username in env");
         let password = std::env::var("REXIT_PASSWORD").expect("Could not find password in env");
-    
+
         (username, password)
     }
 }
