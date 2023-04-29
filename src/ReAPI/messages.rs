@@ -3,14 +3,14 @@ use chrono::{TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Struct for a singular message.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Message {
     pub author: String,
     pub timestamp: chrono::DateTime<Utc>,
     pub content: Content,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum Content {
     Image(super::Image),
     Message(String),

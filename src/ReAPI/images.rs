@@ -2,9 +2,10 @@ use super::Client;
 use crate::exit;
 use cached::SizedCache;
 use console::style;
+use serde::Serialize;
 use std::path::PathBuf;
 
-#[derive(std::hash::Hash, Clone, Debug)]
+#[derive(std::hash::Hash, Clone, Debug, Serialize)]
 pub struct Image {
     pub extension: String,
     pub id: String,

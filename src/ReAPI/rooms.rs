@@ -1,7 +1,8 @@
 use super::Client;
+use serde::Serialize;
 use serde_json::Value;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Room {
     pub id: String,
     messages: Option<Vec<super::Message>>,
