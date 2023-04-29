@@ -8,7 +8,7 @@ use std::path::PathBuf;
 pub struct Image {
     pub extension: String,
     pub id: String,
-    data: Vec<u8>,
+    pub data: Vec<u8>,
 }
 
 impl Image {

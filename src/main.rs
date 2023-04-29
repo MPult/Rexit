@@ -89,6 +89,6 @@ fn main() {
 
     // Export
     for room in rooms {
-        export::export_room_chats(room.to_owned());
+        export::export_room_chats_txt(room.to_owned());
     }
 }
