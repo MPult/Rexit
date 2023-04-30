@@ -7,6 +7,12 @@
 /// does not want to see a panic.
 #[macro_export]
 macro_rules! exit {
+    ($x: literal, $y: literal) => {
+        #[cfg(test)]
+        panic!("{}", $y);
+        #[cfg(not(test))]
+        std::process::exit($x);
+    };
     ($x: literal) => {
         #[cfg(test)]
         panic!();

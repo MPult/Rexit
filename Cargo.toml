@@ -1,6 +1,6 @@
 [package]
 name = "rexit"
-version = "0.1.1"
+version = "1.0.0"
 edition = "2021"
 description = "Export your Reddit Chats"
 readme = "README.md"
@@ -9,7 +9,7 @@ license = "GPL-3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.24"
+chrono = { version = "0.4.24", features = ["serde"] }
 reqwest = {version = "0.11.16", features = ["blocking", "multipart", "cookies", "gzip"]}
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0"
@@ -21,4 +21,3 @@ pretty_env_logger = "0.4.0"
 inquire = "0.6.1"
 cached = "0.43.0"
 console = { version = "0.15.5", features = ["windows-console-colors"] }
-url = { version = "2.3.1", features = ["serde"] }

@@ -11,13 +11,9 @@ use std::env;
 use std::path::PathBuf;
 
 // import other files
-mod export;
-use export::decide_export;
+mod ReAPI;
 mod cli;
-mod login;
-mod id_translation;
-mod images;
-mod messages;
+mod export;
 mod macros;
 
 use cli::{Cli, Parser};
@@ -38,6 +34,9 @@ fn main() {
     // Parse the CLI args
     let args = Cli::parse();
 
+    // Create an ReAPI client
+    let mut client = ReAPI::new_client(args.debug);
+
     if args.debug {
         println!("{}\n{}", 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
@@ -45,14 +44,15 @@ fn main() {
     }
 
     // Decide what auth flow to use
-    let bearer_token: String;
     if args.token == true {
         // Use the bearer token flow
         trace!("Bearer token auth flow");
 
-        bearer_token = Password::new("Your Bearer Token")
-            .prompt()
-            .expect("Error reading bearer token");
+        client.login_with_token(
+            Password::new("Your Bearer Token")
+                .prompt()
+                .expect("Error reading bearer token"),
+        );
     } else {
         // Use the username password auth flow
         trace!("Password auth flow");
@@ -67,12 +67,11 @@ fn main() {
             .prompt()
             .expect("Error reading password");
 
-        bearer_token = login::request_login(username.to_owned(), password.to_owned(), args.debug);
+        client.login(username.to_owned(), password.to_owned());
     }
 
     // Handle output folder stuff
     // Deletes ./out (we append the batches so this is necessary)
-
     if PathBuf::from("./out").exists() {
         std::fs::remove_dir_all("./out").expect("Error deleting out folder");
     }
@@ -81,14 +80,29 @@ fn main() {
     std::fs::create_dir("./out").unwrap();
 
     // Make sure there is an images folder to output to if images is true
-    if args.images && !PathBuf::from("./out/images").exists() {
+    if args.images {
         std::fs::create_dir("./out/images").unwrap();
     }
 
     // Get list of rooms
-    let rooms = messages::list_rooms(bearer_token.clone(), args.debug);
+    let rooms = ReAPI::download_rooms(&client);
 
-    let all_chats = messages::iter_rooms(rooms, bearer_token, args.debug, args.images);
+    // Exports messages to files. Add image if its set to args
+    let mut export_formats: Vec<&str> = args.formats.split(",").collect();
 
-    decide_export(all_chats, args);
+    if args.images == true {
+        export_formats.push("images")
+    }
+
+    for room in rooms {
+        for format in export_formats.clone() {
+            match format {
+                "txt" => export::export_room_chats_txt(room.to_owned()),
+                "json" => export::export_room_chats_json(room.to_owned()),
+                "csv" => export::export_room_chats_csv(room.to_owned()),
+                "images" => export::export_room_images(room.to_owned()),
+                _ => println!("Not valid Format"),
+            }
+        }
+    }
 }

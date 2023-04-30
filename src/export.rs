@@ -1,106 +1,110 @@
-//! This module contains the functions that handle the exporting features of Rexit.
-
-use std::fs;
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
 use std::io::Write;
 
-use crate::cli::Cli;
-use crate::messages::AllChats;
+use crate::ReAPI;
 
-#[allow(dead_code)]
-pub enum ExportFormat {
-    JSON,
-    CSV,
-    TXT
-}
+/// Export the chats into a .txt file
+pub fn export_room_chats_txt(room: ReAPI::Room) {
+    let mut output_buffer: String = String::new();
+    let path = format!("./out/{}.txt", &room.id[1..10]);
 
-/// Function to check what export format is desired and calls the appropriate export function.
-#[allow(dead_code)]
-pub fn decide_export(all_chats: AllChats, cli: Cli) {
-    // Split the comma separated format cli args into a array
-    let formats: Vec<&str> = cli.formats.split(",").collect();
-
-    // Run the appropriate function for each export format
-    for format in formats {
-        match format {
-            "json" => export_to_json(all_chats.clone()),
-            "csv" => export_to_csv(all_chats.clone()),
-            "txt" => export_to_txt(all_chats.clone()),
-            _ => println!("Not valid Format"),
-        }
-    }
-}
-
-/// Export the chats into .txt files.
-pub fn export_to_txt(all_chats: AllChats) {
-    info!("Exporting to TXT");
-    // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangeably)
-    for chat in all_chats.chats {
-        // Create the file for each chat / room
-        let filename = std::path::PathBuf::from("./out")
-            .join(std::path::PathBuf::from(&chat.id[1..10]).with_extension("txt"));
-
-        std::fs::write(filename.clone(), "").unwrap();
-
-        // Iterate over each message in the chat; append to the file
-        for message in chat.messages {
-            // Format for the line to be appended
+    for message in room.messages() {
+        if let ReAPI::Content::Message(text) = message.content {
             let line: String = format!(
-                "[{}] {}: {}",
-                message.timestamp, message.author, message.message
+                "[{}] {}: {}\n",
+                message
+                    .timestamp
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                    .to_string(),
+                message.author,
+                text
             );
 
-            let mut file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open(filename.clone())
-                .unwrap();
+            output_buffer.push_str(line.as_str());
+        } else if let ReAPI::Content::Image(image) = message.content {
+            let image_text = format!("FILE: {}", image.id);
 
-            if let Err(e) = writeln!(file, "{}", line) {
-                eprintln!("Couldn't write to file: {}", e);
-            }
+            let line: String = format!(
+                "[{}] {}: {}\n",
+                message
+                    .timestamp
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                    .to_string(),
+                message.author,
+                image_text
+            );
+
+            output_buffer.push_str(line.as_str());
         }
     }
+
+    std::fs::write(path, output_buffer).unwrap();
 }
 
 /// Export the chats into .json files.
-pub fn export_to_json(all_chats: AllChats) {
-    info!("Exporting to JSON");
+pub fn export_room_chats_json(room: ReAPI::Room) {
+    let path = format!("./out/{}.json", &room.id[1..10]);
 
-    let file_data = serde_json::to_string(&all_chats).unwrap();
+    let file_data = serde_json::to_string(&room).unwrap();
 
-    fs::write("./out/export.json", file_data).expect("Unable to write file");
+    fs::write(path, file_data).expect("Unable to write file");
 }
 
-/// Export the chats into .csv files.
-pub fn export_to_csv(all_chats: AllChats) {
-    info!("Exporting to CSV");
+pub fn export_room_chats_csv(room: ReAPI::Room) {
+    // Create the file for each chat / room
+    let path = format!("./out/{}.csv", &room.id[1..10]);
 
-    // Iterate over the individual chats / rooms (idk what to call it reddit uses the terms interchangeably)
-    for chat in all_chats.chats {
-        // Create the file for each chat / room
+    std::fs::write(path.clone(), "timestamp, author, message \n").unwrap();
 
-        let filename = std::path::PathBuf::from("./out")
-            .join(std::path::PathBuf::from(&chat.id[1..10]).with_extension("csv"));
-        std::fs::write(filename.clone(), "timestamp, author, message \n").unwrap();
+    // Iterate over each message in the chat; append to the file
+    for message in room.messages() {
+        // Format for the line to be appended
+        let mut line: String = String::new();
 
-        // Iterate over each message in the chat; append to the file
-        for message in chat.messages {
-            // Format for the line to be appended
-            let line: String = format!(
-                "{}, {}, {}",
-                message.timestamp, message.author, message.message
+        if let ReAPI::Content::Message(text) = message.content {
+            line = format!(
+                "{}, {}, {},",
+                message
+                    .timestamp
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                    .to_string(),
+                message.author,
+                text
             );
+        } else if let ReAPI::Content::Image(image) = message.content {
+            let image_text = format!("FILE: {}", image.id);
 
-            let mut file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open(filename.clone())
-                .unwrap();
+            line = format!(
+                "{}, {}, {},",
+                message
+                    .timestamp
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                    .to_string(),
+                message.author,
+                image_text
+            );
+        }
 
-            if let Err(e) = writeln!(file, "{}", line) {
-                eprintln!("Couldn't write to file: {}", e);
-            }
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(path.clone())
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", line) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+    }
+}
+
+pub fn export_room_images(room: ReAPI::Room) {
+    for message in room.messages() {
+        if let ReAPI::Content::Image(image) = message.content {
+            std::fs::write(
+                format!("./out/images/{}.{}", image.id, image.extension),
+                image.data,
+            )
+            .unwrap();
         }
     }
 }
