@@ -123,7 +123,6 @@ mod tests {
 
         let messages =super::list_messages(&client, rooms[1].clone().id);
         println!("{:#?}", messages);
-        panic!();
     }
 
     fn get_login() -> (String, String) {
