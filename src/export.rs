@@ -1,7 +1,7 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 
-use crate::ReAPI::{self, Message};
+use crate::ReAPI;
 
 /// Export the chats into a .txt file
 pub fn export_room_chats_txt(room: ReAPI::Room) {
@@ -9,16 +9,21 @@ pub fn export_room_chats_txt(room: ReAPI::Room) {
     let path = format!("./out/{}.txt", &room.id[1..10]);
 
     for message in room.messages() {
+        info!("Message: {:#?}", message);
         if let ReAPI::Content::Message(text) = message.content {
             let line: String = format!(
                 "[{}] {}: {}\n",
-                message.timestamp.to_rfc3339_opts(chrono::SecondsFormat::Secs, true).to_string(),
+                message
+                    .timestamp
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+                    .to_string(),
                 message.author,
                 text
             );
 
             output_buffer.push_str(line.as_str());
         } else if let ReAPI::Content::Image(image) = message.content {
+            info!("Downloading Image");
             let line: String = format!(
                 "[{}] {}: {}\n",
                 message

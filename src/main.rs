@@ -11,9 +11,9 @@ use std::env;
 use std::path::PathBuf;
 
 // import other files
-mod export;
 mod ReAPI;
 mod cli;
+mod export;
 mod macros;
 
 use cli::{Cli, Parser};
@@ -87,11 +87,17 @@ fn main() {
     // Get list of rooms
     let rooms = ReAPI::download_rooms(&client);
 
-    // Export
-    for room in rooms {
-        export::export_room_chats_txt(room.to_owned());
-        export::export_room_chats_json(room.to_owned());
-        export::export_room_chats_csv(room.to_owned());
+    // Exports messages to files
+    let export_formats: Vec<&str> = args.formats.split(",").collect();
 
+    for room in rooms {
+        for format in export_formats.clone() {
+            match format {
+                "txt" => export::export_room_chats_txt(room.to_owned()),
+                "json" => export::export_room_chats_json(room.to_owned()),
+                "csv" => export::export_room_chats_csv(room.to_owned()),
+                _ => println!("Not valid Format"),
+            }
+        }
     }
 }
