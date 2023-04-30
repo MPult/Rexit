@@ -2,7 +2,7 @@
 
 # Rexit
 
-Reddit Brexit - Liberate your Reddit Chats. This tool will export your Reddit chats into a plethora of formats
+Rexit - Liberate your Reddit Chats. This tool will export your Reddit chats into a plethora of formats
 
 ![version](https://img.shields.io/github/v/tag/mpult/rexit?color=orange)
 ![license](https://img.shields.io/github/license/mpult/rexit?color=blue)
@@ -37,18 +37,33 @@ $ rexit --formats csv,json,txt --images
 It will save the files to the current directory. For CSV and TXT it is split by room. If an image (.jpg, .gif, .png, etc.) was sent the filename will be displayed as the message content, along with the prefix `FILE`. 
 
 ## Installation
-You can use the files provided in the releases' page of this repository, or install via cargo.
+You can use the files provided in the releases' page of this repository, install via cargo or brew or build from source.
 
 ### Manual Install
 
-1. Download the build for your system (Windows or M1 MacOS)
+1. Download the build for your system (Windows or arm64-darwin)
 2. Use the terminal run Rexit with the arguments you want. (See Usage for details)
 
 ### Cargo Install
 ```BASH
 $ cargo install rexit
 ```
-
+### Brew Install
+To use brew you need to add my tap
+```BASH
+$ brew tap mpult/mpult
+```
+Then install Rexit
+```BASH
+$ brew install rexit
+```
+### Building from source
+1. Install rust
+2. Clone the repository
+3. Run:
+```BASH
+$ cargo install --file .
+```
 ## Contributing
 To keep the docs focused on the user experience the contributing and technical docs were implemented through cargo doc.
 
