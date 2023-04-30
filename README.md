@@ -30,15 +30,21 @@ Options:
 Currently, you need to specify the formats, and it will ask for the username and password (or bearer token with that auth flow).
 
 ```bash
-$ rexit --formats csv,json,txt
+$ rexit --formats csv,json,txt --images
 > Your Reddit Username: <USERNAME>
 > Your Reddit Password: <PASSWORD>
 ```
-It will save the files to the current directory. For CSV and TXT it is split by room; for JSON it's combined into one file. If an image (.jpg, .gif, .png, etc.) was sent the matrix URL (`mxc://<serverName>/<ID>`) will be displayed as the message content. 
+It will save the files to the current directory. For CSV and TXT it is split by room. If an image (.jpg, .gif, .png, etc.) was sent the filename will be displayed as the message content, along with the prefix `FILE`. 
 
 ## Installation
 You can use the files provided in the releases' page of this repository, or install via cargo.
 
+### Manual Install
+
+1. Download the build for your system (Windows or M1 MacOS)
+2. Use the terminal run Rexit with the arguments you want. (See Usage for details)
+
+### Cargo Install
 ```BASH
 $ cargo install rexit
 ```
