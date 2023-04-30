@@ -72,17 +72,21 @@ pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
 
         // Iterate over messages
         for message in messages.chunk {
-            if let Some(text) = message.content.body {
+
+            // Detect if message is text or file
+            if message.content.url.is_some() {
+                // Is a file
                 output.push(Message {
-                    author: message.sender,
+                    author: super::get_user(client, message.sender).displayname,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Message(text),
+                    content: Content::Image(super::images::get_image(&client, message.content.url.unwrap())),
                 })
-            } else if let Some(image_url) = message.content.url {
+            } else if message.content.body.is_some() {
+                // Text Message
                 output.push(Message {
-                    author: message.sender,
+                    author: super::get_user(client, message.sender).displayname,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Image(super::images::get_image(&client, image_url)),
+                    content: Content::Message(message.content.body.unwrap()),
                 })
             }
         }

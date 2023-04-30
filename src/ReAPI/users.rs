@@ -13,8 +13,6 @@ pub struct User {
     convert = r#"{ format!("{}", id) }"#
 )]
 pub fn get_user(client: &Client, id: String) -> User {
-    info!(target: "get_user", "id: {}", id.clone());
-    println!("{}", id);
     let url = format!("https://matrix.redditspace.com/_matrix/client/r0/profile/{id}/displayname",);
 
     let response = client
@@ -25,7 +23,7 @@ pub fn get_user(client: &Client, id: String) -> User {
 
     let value: serde_json::Value = serde_json::from_str(response.text().unwrap().as_str()).unwrap();
 
-    info!("displayname: {}", value["displayname"].clone());
+    info!("Found user: {}", value["displayname"].clone());
 
     User {
         id: id,

@@ -9,7 +9,6 @@ pub fn export_room_chats_txt(room: ReAPI::Room) {
     let path = format!("./out/{}.txt", &room.id[1..10]);
 
     for message in room.messages() {
-        info!("Message: {:#?}", message);
         if let ReAPI::Content::Message(text) = message.content {
             let line: String = format!(
                 "[{}] {}: {}\n",
@@ -23,7 +22,8 @@ pub fn export_room_chats_txt(room: ReAPI::Room) {
 
             output_buffer.push_str(line.as_str());
         } else if let ReAPI::Content::Image(image) = message.content {
-            info!("Downloading Image");
+            let image_text = format!("FILE: {}", image.id);
+
             let line: String = format!(
                 "[{}] {}: {}\n",
                 message
@@ -31,16 +31,10 @@ pub fn export_room_chats_txt(room: ReAPI::Room) {
                     .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
                     .to_string(),
                 message.author,
-                image.id
+                image_text
             );
 
             output_buffer.push_str(line.as_str());
-
-            std::fs::write(
-                format!("./out/images/{}{}", image.id, image.extension),
-                image.data,
-            )
-            .unwrap();
         }
     }
 
@@ -78,6 +72,8 @@ pub fn export_room_chats_csv(room: ReAPI::Room) {
                 text
             );
         } else if let ReAPI::Content::Image(image) = message.content {
+            let image_text = format!("FILE: {}", image.id);
+
             line = format!(
                 "{}, {}, {},",
                 message
@@ -85,7 +81,7 @@ pub fn export_room_chats_csv(room: ReAPI::Room) {
                     .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
                     .to_string(),
                 message.author,
-                image.id
+                image_text
             );
         }
 
@@ -97,6 +93,18 @@ pub fn export_room_chats_csv(room: ReAPI::Room) {
 
         if let Err(e) = writeln!(file, "{}", line) {
             eprintln!("Couldn't write to file: {}", e);
+        }
+    }
+}
+
+pub fn export_room_images(room: ReAPI::Room) {
+    for message in room.messages() {
+        if let ReAPI::Content::Image(image) = message.content {
+            std::fs::write(
+                format!("./out/images/{}.{}", image.id, image.extension),
+                image.data,
+            )
+            .unwrap();
         }
     }
 }

@@ -64,7 +64,7 @@ impl super::Client {
         );
 
         // Perform the actual login post request
-        let x = self.reqwest_client
+        let _x = self.reqwest_client
         .post("https://www.reddit.com/login")
         .header("Content-Type", "application/x-www-form-urlencoded")
         .header("Sec-Ch-Ua", "\"Not:A-Brand\";v=\"99\", \"Chromium\";v=\"112\"")
@@ -82,7 +82,6 @@ impl super::Client {
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-        println!("{}", x.text().unwrap());
 
         // Request / to get the bearer token
         let response = self.reqwest_client

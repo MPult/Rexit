@@ -55,7 +55,6 @@ pub fn get_image(client: &Client, url: String) -> Image {
 fn parse_matrix_image_url(url: &str) -> (String, String) {
     let url = reqwest::Url::parse(url).unwrap(); // I assume that all urls given to this function are valid
 
-    println!("{}", url);
     let output_url =
         reqwest::Url::parse("https://matrix.redditspace.com/_matrix/media/r0/download/reddit.com/")
             .unwrap();

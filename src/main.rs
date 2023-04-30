@@ -87,8 +87,12 @@ fn main() {
     // Get list of rooms
     let rooms = ReAPI::download_rooms(&client);
 
-    // Exports messages to files
-    let export_formats: Vec<&str> = args.formats.split(",").collect();
+    // Exports messages to files. Add image if its set to args
+    let mut export_formats: Vec<&str> = args.formats.split(",").collect();
+
+    if args.images == true {
+        export_formats.push("images")
+    }
 
     for room in rooms {
         for format in export_formats.clone() {
@@ -96,6 +100,7 @@ fn main() {
                 "txt" => export::export_room_chats_txt(room.to_owned()),
                 "json" => export::export_room_chats_json(room.to_owned()),
                 "csv" => export::export_room_chats_csv(room.to_owned()),
+                "images" => export::export_room_images(room.to_owned()),
                 _ => println!("Not valid Format"),
             }
         }
