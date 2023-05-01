@@ -1,7 +1,7 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 
-use crate::ReAPI;
+use crate::ReAPI::{self, Post};
 
 /// Export the chats into a .txt file
 pub fn export_room_chats_txt(room: ReAPI::Room) {
@@ -50,6 +50,7 @@ pub fn export_room_chats_json(room: ReAPI::Room) {
     fs::write(path, file_data).expect("Unable to write file");
 }
 
+/// Export chats into csv
 pub fn export_room_chats_csv(room: ReAPI::Room) {
     // Create the file for each chat / room
     let path = format!("./out/messages/{}.csv", &room.id[1..10]);
@@ -97,6 +98,7 @@ pub fn export_room_chats_csv(room: ReAPI::Room) {
     }
 }
 
+/// Export images from chats
 pub fn export_room_images(room: ReAPI::Room) {
     for message in room.messages() {
         if let ReAPI::Content::Image(image) = message.content {
@@ -106,5 +108,51 @@ pub fn export_room_images(room: ReAPI::Room) {
             )
             .unwrap();
         }
+    }
+}
+
+/// Export saved posts
+pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>) {
+    // Export to JSON
+    if formats.contains(&"json") {
+        let path = "./out/saved_posts/saved_posts.json";
+
+        let file_data = serde_json::to_string(&post_array).unwrap();
+
+        fs::write(path, file_data).expect("Unable to write file");
+    }
+
+    // Export to txt
+    if formats.contains(&"txt") {
+        let path = "./out/saved_posts/saved_posts.txt";
+        let mut output_buffer: String = String::new();
+
+        for post in &post_array {
+            // Iterate over each line and append to .txt file
+            let line: String = format!(
+                "Title: {}, Subreddit: {}, Permalink: {}, Images {:?}\n",
+                post.title, post.subreddit_name, post.permalink, post.img_url
+            );
+
+            output_buffer.push_str(line.as_str());
+        }
+        std::fs::write(path, output_buffer).unwrap();
+    }
+
+    if formats.contains(&"csv") {
+        // Export to CSV
+        let path = "./out/saved_posts/saved_posts.csv";
+        let mut output_buffer: String = "Title, Subreddit, Permalink, Images\n".to_owned();
+
+        for post in post_array {
+            // Iterate over each line and append to .txt file
+            let line: String = format!(
+                "{}, {}, {}, {:?}\n",
+                post.title, post.subreddit_name, post.permalink, post.img_url
+            );
+
+            output_buffer.push_str(line.as_str());
+        }
+        std::fs::write(path, output_buffer).unwrap();
     }
 }

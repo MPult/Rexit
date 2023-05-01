@@ -6,6 +6,7 @@ extern crate pretty_env_logger;
 extern crate log;
 
 use console::style;
+use export::export_saved_posts;
 use inquire::{self, Password, Text};
 use std::env;
 use std::path::PathBuf;
@@ -77,6 +78,8 @@ fn main() {
         client.login(username.to_owned(), password.to_owned());
     }
 
+    info!("Login Successful");
+
     // Handle output folder stuff
     // Deletes ./out (we append the batches so this is necessary)
     if PathBuf::from("./out").exists() {
@@ -86,6 +89,7 @@ fn main() {
     // Creates out folders
     std::fs::create_dir("./out").unwrap();
     std::fs::create_dir("./out/messages").unwrap();
+    std::fs::create_dir("./out/saved_posts").unwrap();
 
 
     // Make sure there is an images folder to output to if images is true
@@ -96,16 +100,18 @@ fn main() {
     // Get list of rooms
     let rooms = ReAPI::download_rooms(&client);
 
+    // Gets saved posts
+    let saved_posts = ReAPI::download_saved_posts(&client, args.images);
+
+    // Export logic
     // Exports messages to files. Add image if its set to args
     let mut export_formats: Vec<&str> = args.formats.split(",").collect();
-
-    // Gets saved posts
-    let saved_posts = ReAPI::download_saved_posts(&client);
 
     if args.images == true {
         export_formats.push("images")
     }
 
+    // Export chats
     for room in rooms {
         for format in export_formats.clone() {
             match format {
@@ -117,4 +123,7 @@ fn main() {
             }
         }
     }
+
+    // Export Saved posts
+    export_saved_posts(saved_posts, export_formats);
 }

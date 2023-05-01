@@ -23,7 +23,7 @@ pub fn get_user(client: &Client, id: String) -> User {
 
     let value: serde_json::Value = serde_json::from_str(response.text().unwrap().as_str()).unwrap();
 
-    info!("Found user: {}", value["displayname"].clone());
+    debug!("Found user: {}", value["displayname"].clone());
 
     User {
         id: id,
