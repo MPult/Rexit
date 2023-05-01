@@ -6,7 +6,7 @@ use crate::ReAPI;
 /// Export the chats into a .txt file
 pub fn export_room_chats_txt(room: ReAPI::Room) {
     let mut output_buffer: String = String::new();
-    let path = format!("./out/{}.txt", &room.id[1..10]);
+    let path = format!("./out/messages/{}.txt", &room.id[1..10]);
 
     for message in room.messages() {
         if let ReAPI::Content::Message(text) = message.content {
@@ -43,7 +43,7 @@ pub fn export_room_chats_txt(room: ReAPI::Room) {
 
 /// Export the chats into .json files.
 pub fn export_room_chats_json(room: ReAPI::Room) {
-    let path = format!("./out/{}.json", &room.id[1..10]);
+    let path = format!("./out/messages/{}.json", &room.id[1..10]);
 
     let file_data = serde_json::to_string(&room).unwrap();
 
@@ -52,7 +52,7 @@ pub fn export_room_chats_json(room: ReAPI::Room) {
 
 pub fn export_room_chats_csv(room: ReAPI::Room) {
     // Create the file for each chat / room
-    let path = format!("./out/{}.csv", &room.id[1..10]);
+    let path = format!("./out/messages/{}.csv", &room.id[1..10]);
 
     std::fs::write(path.clone(), "timestamp, author, message \n").unwrap();
 
@@ -101,7 +101,7 @@ pub fn export_room_images(room: ReAPI::Room) {
     for message in room.messages() {
         if let ReAPI::Content::Image(image) = message.content {
             std::fs::write(
-                format!("./out/images/{}.{}", image.id, image.extension),
+                format!("./out/messages/images/{}.{}", image.id, image.extension),
                 image.data,
             )
             .unwrap();

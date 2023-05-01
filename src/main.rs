@@ -53,6 +53,13 @@ fn main() {
                 .prompt()
                 .expect("Error reading bearer token"),
         );
+    } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok() {
+        warn!("Found password and username enviornment variables");
+
+        let username = std::env::var("REXIT_USERNAME").unwrap();
+        let password = std::env::var("REXIT_PASSWORD").unwrap();
+        client.login(username, password);
+
     } else {
         // Use the username password auth flow
         trace!("Password auth flow");
@@ -76,12 +83,14 @@ fn main() {
         std::fs::remove_dir_all("./out").expect("Error deleting out folder");
     }
 
-    // Creates out folder
+    // Creates out folders
     std::fs::create_dir("./out").unwrap();
+    std::fs::create_dir("./out/messages").unwrap();
+
 
     // Make sure there is an images folder to output to if images is true
     if args.images {
-        std::fs::create_dir("./out/images").unwrap();
+        std::fs::create_dir("./out/messages/images").unwrap();
     }
 
     // Get list of rooms
@@ -89,6 +98,9 @@ fn main() {
 
     // Exports messages to files. Add image if its set to args
     let mut export_formats: Vec<&str> = args.formats.split(",").collect();
+
+    // Gets saved posts
+    let saved_posts = ReAPI::download_saved_posts(&client);
 
     if args.images == true {
         export_formats.push("images")
