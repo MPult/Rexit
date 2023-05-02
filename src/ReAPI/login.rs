@@ -37,6 +37,7 @@ impl super::Client {
         let resp = self
             .reqwest_client
             .get("https://www.reddit.com/login/")
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
             .send()
             .expect("Failed to send HTTP request; to obtain CSRF token");
 

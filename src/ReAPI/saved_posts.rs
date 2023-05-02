@@ -25,7 +25,11 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
         .send()
         .expect("Failed to send HTTP request");
 
-    let saved_posts: Value = serde_json::from_str(response.text().unwrap().as_str()).unwrap();
+    let saved_posts: Result<Value, _> = serde_json::from_str(response.text().unwrap().as_str());
+    if saved_posts.is_err() {
+        return vec![];
+    }
+    let saved_posts = saved_posts.unwrap();
 
     let mut saved_list: Vec<Post> = Vec::<Post>::new();
 
