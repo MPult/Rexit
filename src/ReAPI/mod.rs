@@ -6,11 +6,15 @@ mod login;
 mod messages;
 mod rooms;
 mod users;
+mod saved_posts;
 
 pub use images::Image;
 
 pub use rooms::download_rooms;
 pub use rooms::Room;
+
+pub use saved_posts::download_saved_posts;
+pub use saved_posts::Post;
 
 pub use messages::Content;
 pub use messages::Message;
