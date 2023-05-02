@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Upload coverage reports to Codecov
     - uses: codecov/codecov-action@v3
+    - name: Upload coverage reports to Codecov
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
