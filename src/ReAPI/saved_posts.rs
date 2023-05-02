@@ -43,7 +43,7 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
                 let final_url = format!("https://i.redd.it{}", fixed_url.path());
 
                 if image_download {
-                    //images::get_image(&client, final_url.clone());
+                    images::get_image(&client, final_url.clone());
                 }
 
                 images.push(final_url.to_owned())

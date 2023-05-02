@@ -41,18 +41,22 @@ impl Image {
 )]
 pub fn get_image(client: &Client, url: String) -> Image {
     info!(target: "get_image", "Getting image: {}", url);
-    let (url, id) = parse_matrix_image_url(url.as_str());
+    let mut url = url;
+    let mut id: Option<String> = None;
+    if url.starts_with("mxc") {
+        (url, id) = parse_matrix_image_url(url.as_str());
+    }
 
-    let data = client.reqwest_client.get(url).send().unwrap();
-
+    let data = client.reqwest_client.get(url.clone()).send().unwrap();
+    
     Image {
         extension: get_image_extension(&data.headers()),
-        id,
+        id: id.unwrap_or(url),
         data: data.bytes().unwrap().to_vec(),
     }
 }
 
-fn parse_matrix_image_url(url: &str) -> (String, String) {
+fn parse_matrix_image_url(url: &str) -> (String, Option<String>) {
     let url = reqwest::Url::parse(url).unwrap(); // I assume that all urls given to this function are valid
 
     let output_url =
@@ -63,7 +67,7 @@ fn parse_matrix_image_url(url: &str) -> (String, String) {
 
     let output_url = output_url.join(id).unwrap();
 
-    (output_url.to_string(), id.to_string())
+    (output_url.to_string(), Some(id.to_string()))
 }
 
 fn get_image_extension(headers: &reqwest::header::HeaderMap) -> String {
