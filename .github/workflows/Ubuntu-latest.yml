@@ -1,6 +1,10 @@
 name: Ubuntu-latest
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Upload coverage reports to Codecov
+    - uses: codecov/codecov-action@v3
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
