@@ -3,7 +3,7 @@ use url::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::{Client, images};
+use super::{images, Client};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedList {
@@ -39,10 +39,9 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
         let mut images = Vec::<String>::new();
         if !post["data"]["preview"].is_null() {
             for image in post["data"]["preview"]["images"].as_array().unwrap() {
-
                 // By default these urls are for the reddit cache that requires auth
                 // but the img ID is same as the non-cached one (i.redd.it/)
-                let url =  image["source"]["url"].as_str().unwrap().to_string();
+                let url = image["source"]["url"].as_str().unwrap().to_string();
                 let fixed_url = Url::parse(&url).unwrap();
                 let final_url = format!("https://i.redd.it{}", fixed_url.path());
 

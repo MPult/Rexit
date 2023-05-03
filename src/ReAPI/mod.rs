@@ -5,8 +5,8 @@ mod images;
 mod login;
 mod messages;
 mod rooms;
-mod users;
 mod saved_posts;
+mod users;
 
 pub use images::Image;
 

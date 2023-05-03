@@ -48,7 +48,7 @@ pub fn get_image(client: &Client, url: String) -> Image {
     }
 
     let data = client.reqwest_client.get(url.clone()).send().unwrap();
-    
+
     Image {
         extension: get_image_extension(&data.headers()),
         id: id.unwrap_or(url),

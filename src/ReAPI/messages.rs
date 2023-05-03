@@ -52,7 +52,6 @@ pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
     let mut batch: String = String::new();
     // Loop over the batching
     loop {
-
         let url = format!(
             "https://matrix.redditspace.com/_matrix/client/r0/rooms/{id}/messages?limit=10000&dir=b&from={batch}");
 
@@ -72,14 +71,16 @@ pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
 
         // Iterate over messages
         for message in messages.chunk {
-
             // Detect if message is text or file
             if message.content.url.is_some() {
                 // Is a file
                 output.push(Message {
                     author: super::get_user(client, message.sender).displayname,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Image(super::images::get_image(&client, message.content.url.unwrap())),
+                    content: Content::Image(super::images::get_image(
+                        &client,
+                        message.content.url.unwrap(),
+                    )),
                 })
             } else if message.content.body.is_some() {
                 // Text Message
@@ -90,7 +91,7 @@ pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
                 })
             }
         }
-        
+
         // Check for end condition
         if messages.end == "t0_0" {
             debug!("Found messages end");
@@ -121,7 +122,7 @@ mod tests {
 
         let rooms = super::super::download_rooms(&client);
 
-        let messages =super::list_messages(&client, rooms[1].clone().id);
+        let messages = super::list_messages(&client, rooms[1].clone().id);
         println!("{:#?}", messages);
     }
 

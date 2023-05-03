@@ -60,7 +60,6 @@ fn main() {
         let username = std::env::var("REXIT_USERNAME").unwrap();
         let password = std::env::var("REXIT_PASSWORD").unwrap();
         client.login(username, password);
-
     } else {
         // Use the username password auth flow
         trace!("Password auth flow");
@@ -90,7 +89,6 @@ fn main() {
     std::fs::create_dir("./out").unwrap();
     std::fs::create_dir("./out/messages").unwrap();
     std::fs::create_dir("./out/saved_posts").unwrap();
-
 
     // Make sure there is an images folder to output to if images is true
     if args.images {

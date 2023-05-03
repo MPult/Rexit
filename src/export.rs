@@ -156,3 +156,32 @@ pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>) {
         std::fs::write(path, output_buffer).unwrap();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::Utc;
+
+    use crate::ReAPI;
+
+    #[test]
+    fn export_room_chats() {
+        let messages_array: Option<Vec<ReAPI::Message>> = Some(Vec::new());
+
+        let message = ReAPI::Message {
+            author: "rexitTest".to_owned(),
+            timestamp: Utc::now(),
+            content: ReAPI::Content::Message("Testing".to_owned()),
+        };
+        messages_array.clone().unwrap().push(message);
+
+        let room = ReAPI::Room {
+            id: "!fTxOL9GzJaZR71aLRSYstHNVR5j_Zi82L4hIVyjdHuw:reddit.com".to_owned(),
+            messages: messages_array,
+        };
+
+        // Export it
+        super::export_room_chats_csv(room.to_owned());
+        super::export_room_chats_txt(room.to_owned());
+        super::export_room_chats_json(room.to_owned());
+    }
+}
