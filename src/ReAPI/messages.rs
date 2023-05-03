@@ -113,6 +113,7 @@ mod tests {
     use super::super::new_client;
 
     #[test]
+    #[ignore]
     fn list_messages() {
         let (username, password) = get_login();
 
