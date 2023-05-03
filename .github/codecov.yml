@@ -1,0 +1,16 @@
+codecov:
+  notify:
+    after_n_builds: 1
+    wait_for_ci: yes
+
+coverage:
+  range: "0...0"
+
+coverage:
+  status:
+    project:
+      default:
+        threshold: 100%
+    patch:
+      default: 
+        threshold: 100%

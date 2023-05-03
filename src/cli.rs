@@ -21,6 +21,10 @@ pub struct Cli {
     pub debug: bool,
 
     /// Output images too (outputs to images folder)
-    #[arg(long)]
+    #[arg(short,long)]
     pub images: bool,
+
+    /// What folder to output to
+    #[arg(short,long,default_value="./out")]
+    pub out: String,
 }

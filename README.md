@@ -21,6 +21,9 @@ Usage: rexit.exe [OPTIONS] --formats <FORMATS>
 Options:
   -f, --formats <FORMATS>  The formats to export to. Options: csv,json,txt
   -t, --token              To use the bearer token flow, instead of username and password
+      --debug              Allow debugging of Rexit
+  -i, --images             Output images too (outputs to images folder)
+  -o, --out <OUT>          What folder to output to [default: ./out]
   -h, --help               Print help
   -V, --version            Print version
 ```

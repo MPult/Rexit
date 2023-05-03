@@ -80,19 +80,19 @@ fn main() {
     info!("Login Successful");
 
     // Handle output folder stuff
-    // Deletes ./out (we append the batches so this is necessary)
-    if PathBuf::from("./out").exists() {
-        std::fs::remove_dir_all("./out").expect("Error deleting out folder");
+    // Deletes the output folder (we append the batches so this is necessary)
+    if PathBuf::from(&args.out).exists() {
+        std::fs::remove_dir_all(&args.out).expect("Error deleting out folder");
     }
 
     // Creates out folders
-    std::fs::create_dir("./out").unwrap();
-    std::fs::create_dir("./out/messages").unwrap();
-    std::fs::create_dir("./out/saved_posts").unwrap();
+    std::fs::create_dir(&args.out).unwrap();
+    std::fs::create_dir(format!("{}/messages", args.out)).unwrap();
+    std::fs::create_dir(format!("{}/saved_posts", args.out)).unwrap();
 
     // Make sure there is an images folder to output to if images is true
     if args.images {
-        std::fs::create_dir("./out/messages/images").unwrap();
+        std::fs::create_dir(format!("{}/messages/images", args.out)).unwrap();
     }
 
     // Get list of rooms
@@ -113,15 +113,15 @@ fn main() {
     for room in rooms {
         for format in export_formats.clone() {
             match format {
-                "txt" => export::export_room_chats_txt(room.to_owned()),
-                "json" => export::export_room_chats_json(room.to_owned()),
-                "csv" => export::export_room_chats_csv(room.to_owned()),
-                "images" => export::export_room_images(room.to_owned()),
+                "txt" => export::export_room_chats_txt(room.to_owned(), args.out.clone()),
+                "json" => export::export_room_chats_json(room.to_owned(), args.out.clone()),
+                "csv" => export::export_room_chats_csv(room.to_owned(), args.out.clone()),
+                "images" => export::export_room_images(room.to_owned(), args.out.clone()),
                 _ => println!("Not valid Format"),
             }
         }
     }
 
     // Export Saved posts
-    export_saved_posts(saved_posts, export_formats);
+    export_saved_posts(saved_posts, export_formats, args.out.clone());
 }
