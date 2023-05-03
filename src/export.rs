@@ -103,7 +103,10 @@ pub fn export_room_images(room: ReAPI::Room, out_folder: String) {
     for message in room.messages() {
         if let ReAPI::Content::Image(image) = message.content {
             std::fs::write(
-                format!("{}/messages/images/{}.{}", out_folder, image.id, image.extension),
+                format!(
+                    "{}/messages/images/{}.{}",
+                    out_folder, image.id, image.extension
+                ),
                 image.data,
             )
             .unwrap();

@@ -19,6 +19,7 @@ pub struct Post {
 }
 
 pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> {
+    info!("Getting Saved Posts");
     let response = client
         .reqwest_client
         .get("https://www.reddit.com/user/RexitTest/saved.json")
