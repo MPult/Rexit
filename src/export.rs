@@ -184,4 +184,19 @@ mod tests {
         super::export_room_chats_txt(room.to_owned());
         super::export_room_chats_json(room.to_owned());
     }
+
+    #[test]
+    fn export_saved_posts() {
+        let mut posts: Vec<ReAPI::Post> = Vec::new();
+
+        let post = ReAPI::Post {
+            title: "Da fehlt doch was".to_owned(),
+            subreddit_name: "r/hamburg".to_owned(),
+            permalink: "/r/hamburg/comments/134bv4v/da_fehlt_doch_was/".to_owned(),
+            img_url: ["https://preview.redd.it/…051acd31351105e323c5d7a6".to_owned()].to_vec(),
+        };
+        posts.push(post);
+
+        super::export_saved_posts(posts, ["txt", "json", "csv"].to_vec())
+    }
 }
