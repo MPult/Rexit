@@ -83,7 +83,6 @@ impl super::Client {
         .send()
         .expect("Failed to send HTTP request; to obtain session token");
 
-
         // Request / to get the bearer token
         let response = self.reqwest_client
         .get("https://www.reddit.com/")

@@ -17,7 +17,8 @@ Cargo.lock
 /target
 
 .vscode
-
+.env
 
 # REXIT EXPORT FILES
 /out
+/out1

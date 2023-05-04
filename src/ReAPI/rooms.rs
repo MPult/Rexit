@@ -5,12 +5,15 @@ use serde_json::Value;
 #[derive(Debug, Clone, Serialize)]
 pub struct Room {
     pub id: String,
-    messages: Option<Vec<super::Message>>,
+    pub(crate) messages: Option<Vec<super::Message>>,
 }
 
 impl Room {
     fn download(id: String, client: &Client) -> Room {
-        Room { id: id.clone(), messages: download_messages(&client, id.clone())}
+        Room {
+            id: id.clone(),
+            messages: download_messages(&client, id.clone()),
+        }
     }
 
     pub fn messages(&self) -> Vec<super::Message> {
@@ -18,8 +21,7 @@ impl Room {
     }
 }
 
-
-fn download_messages(client: &Client, id: String) ->  Option<Vec<super::Message>>{
+fn download_messages(client: &Client, id: String) -> Option<Vec<super::Message>> {
     Some(super::messages::list_messages(client, id))
 }
 
