@@ -9,7 +9,6 @@ use console::style;
 use export::export_saved_posts;
 use inquire::{self, Password, Text};
 use std::env;
-use std::path::PathBuf;
 
 // import other files
 mod ReAPI;
@@ -81,18 +80,18 @@ fn main() {
 
     // Handle output folder stuff
     // Deletes the output folder (we append the batches so this is necessary)
-    if PathBuf::from(&args.out).exists() {
+    if args.out.exists() {
         std::fs::remove_dir_all(&args.out).expect("Error deleting out folder");
     }
 
     // Creates out folders
     std::fs::create_dir(&args.out).unwrap();
-    std::fs::create_dir(format!("{}/messages", args.out)).unwrap();
-    std::fs::create_dir(format!("{}/saved_posts", args.out)).unwrap();
+    std::fs::create_dir(args.out.join("messages")).unwrap();
+    std::fs::create_dir(args.out.join("saved_posts")).unwrap();
 
     // Make sure there is an images folder to output to if images is true
     if args.images {
-        std::fs::create_dir(format!("{}/messages/images", args.out)).unwrap();
+        std::fs::create_dir(args.out.join("messages/images")).unwrap();
     }
 
     // Get list of rooms
@@ -113,15 +112,15 @@ fn main() {
     for room in rooms {
         for format in export_formats.clone() {
             match format {
-                "txt" => export::export_room_chats_txt(room.to_owned(), args.out.clone()),
-                "json" => export::export_room_chats_json(room.to_owned(), args.out.clone()),
-                "csv" => export::export_room_chats_csv(room.to_owned(), args.out.clone()),
-                "images" => export::export_room_images(room.to_owned(), args.out.clone()),
+                "txt" => export::export_room_chats_txt(room.to_owned(), &args.out),
+                "json" => export::export_room_chats_json(room.to_owned(), &args.out),
+                "csv" => export::export_room_chats_csv(room.to_owned(), &args.out),
+                "images" => export::export_room_images(room.to_owned(), &args.out),
                 _ => println!("Not valid Format"),
             }
         }
     }
 
     // Export Saved posts
-    export_saved_posts(saved_posts, export_formats, args.out.clone());
+    export_saved_posts(saved_posts, export_formats, &args.out);
 }

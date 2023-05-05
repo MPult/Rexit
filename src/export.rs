@@ -1,12 +1,13 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::path::Path;
 
 use crate::ReAPI::{self, Post};
 
 /// Export the chats into a .txt file
-pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: String) {
+pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
     let mut output_buffer: String = String::new();
-    let path = format!("{}/messages/{}.txt", out_folder, &room.id[1..10]);
+    let path = out_folder.join(format!("messages/{}.txt", &room.id[1..10]));
 
     for message in room.messages() {
         if let ReAPI::Content::Message(text) = message.content {
@@ -42,8 +43,8 @@ pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: String) {
 }
 
 /// Export the chats into .json files.
-pub fn export_room_chats_json(room: ReAPI::Room, out_folder: String) {
-    let path = format!("{}/messages/{}.json", out_folder, &room.id[1..10]);
+pub fn export_room_chats_json(room: ReAPI::Room, out_folder: &Path) {
+    let path = out_folder.join(format!("messages/{}.json", &room.id[1..10]));
 
     let file_data = serde_json::to_string(&room).unwrap();
 
@@ -51,9 +52,9 @@ pub fn export_room_chats_json(room: ReAPI::Room, out_folder: String) {
 }
 
 /// Export chats into csv
-pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: String) {
+pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
     // Create the file for each chat / room
-    let path = format!("{}/messages/{}.csv", out_folder, &room.id[1..10]);
+    let path = out_folder.join(format!("messages/{}.csv", &room.id[1..10]));
 
     std::fs::write(path.clone(), "timestamp, author, message \n").unwrap();
 
@@ -99,14 +100,11 @@ pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: String) {
 }
 
 /// Export images from chats
-pub fn export_room_images(room: ReAPI::Room, out_folder: String) {
+pub fn export_room_images(room: ReAPI::Room, out_folder: &Path) {
     for message in room.messages() {
         if let ReAPI::Content::Image(image) = message.content {
             std::fs::write(
-                format!(
-                    "{}/messages/images/{}.{}",
-                    out_folder, image.id, image.extension
-                ),
+                out_folder.join(format!("messages/images/{}.{}", image.id, image.extension)),
                 image.data,
             )
             .unwrap();
@@ -115,10 +113,10 @@ pub fn export_room_images(room: ReAPI::Room, out_folder: String) {
 }
 
 /// Export saved posts
-pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>, out_folder: String) {
+pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>, out_folder: &Path) {
     // Export to JSON
     if formats.contains(&"json") {
-        let path = format!("{}/saved_posts/saved_posts.json", out_folder);
+        let path = out_folder.join("saved_posts/saved_posts.json");
 
         let file_data = serde_json::to_string(&post_array).unwrap();
 
@@ -127,7 +125,7 @@ pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>, out_folder:
 
     // Export to txt
     if formats.contains(&"txt") {
-        let path = format!("{}/saved_posts/saved_posts.txt", out_folder);
+        let path = out_folder.join("saved_posts/saved_posts.txt");
         let mut output_buffer: String = String::new();
 
         for post in &post_array {
@@ -144,7 +142,7 @@ pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>, out_folder:
 
     if formats.contains(&"csv") {
         // Export to CSV
-        let path = format!("{}/saved_posts/saved_posts.csv", out_folder);
+        let path = out_folder.join("saved_posts/saved_posts.csv");
         let mut output_buffer: String = "Title, Subreddit, Permalink, Images\n".to_owned();
 
         for post in post_array {
@@ -162,22 +160,26 @@ pub fn export_saved_posts(post_array: Vec<Post>, formats: Vec<&str>, out_folder:
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     use chrono::Utc;
 
     use crate::ReAPI;
 
+    // return a path from an env var with suffix or use tempdir
+    fn out_dir(suffix: &str) -> Box<dyn AsRef<Path>> {
+        match std::env::var("REXIT_TEST_OUT_DIR") {
+            Ok(dir) => Box::new(PathBuf::from(dir).join(suffix)),
+            Err(_) => Box::new(tempfile::tempdir().unwrap()),
+        }
+    }
+
     #[test]
     fn export_room_chats() {
-        // Make folders needed
-        if PathBuf::from("./out1").exists() {
-            std::fs::remove_dir_all("./out1").expect("Error deleting out folder");
-        }
+        let out_dir = out_dir("export_room_chats");
+        let out_path = out_dir.as_ref().as_ref();
 
-        std::fs::create_dir("./out1").unwrap();
-        std::fs::create_dir("./out1/messages").unwrap();
-        std::fs::create_dir("./out1/messages/images").unwrap();
+        std::fs::create_dir_all(out_path.join("messages/images")).unwrap();
 
         let messages_array: Option<Vec<ReAPI::Message>> = Some(Vec::new());
 
@@ -194,20 +196,21 @@ mod tests {
         };
 
         // Export it
-        super::export_room_chats_csv(room.to_owned(), "./out1".to_owned());
-        super::export_room_chats_txt(room.to_owned(), "./out1".to_owned());
-        super::export_room_chats_json(room.to_owned(), "./out1".to_owned());
+        super::export_room_chats_csv(room.to_owned(), out_path);
+        super::export_room_chats_txt(room.to_owned(), out_path);
+        super::export_room_chats_json(room.to_owned(), out_path);
     }
 
     #[test]
     fn export_saved_posts() {
-        // Make folders needed
-        if PathBuf::from("./out/saved_posts").exists() {
-            std::fs::remove_dir_all("./out").expect("Error deleting out folder");
+        let out_dir = out_dir("export_saved_posts");
+        let out_path = out_dir.as_ref().as_ref();
+
+        if out_path.exists() {
+            std::fs::remove_dir_all(out_path).unwrap();
         }
 
-        std::fs::create_dir("./out/").unwrap();
-        std::fs::create_dir("./out/saved_posts").unwrap();
+        std::fs::create_dir_all(out_path.join("saved_posts")).unwrap();
 
         let mut posts: Vec<ReAPI::Post> = Vec::new();
 
@@ -219,6 +222,6 @@ mod tests {
         };
         posts.push(post);
 
-        super::export_saved_posts(posts, ["txt", "json", "csv"].to_vec(), "./out".to_owned())
+        super::export_saved_posts(posts, ["txt", "json", "csv"].to_vec(), out_path)
     }
 }
