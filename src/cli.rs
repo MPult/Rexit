@@ -1,5 +1,7 @@
 //! Argument Parser
 
+use std::path::PathBuf;
+
 pub use clap::{Args, Parser, Subcommand};
 
 /// CLI argument parser, see the Cli struct for the possible arguments
@@ -26,5 +28,5 @@ pub struct Cli {
 
     /// What folder to output to
     #[arg(short, long, default_value = "./out")]
-    pub out: String,
+    pub out: PathBuf,
 }
