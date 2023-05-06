@@ -2,6 +2,7 @@ use super::Client;
 use crate::exit;
 use console::style;
 use serde::Serialize;
+use url::Url;
 use std::path::PathBuf;
 
 #[derive(std::hash::Hash, Clone, Debug, Serialize)]
@@ -39,11 +40,20 @@ pub async fn get_image(client: &Client, url: String, path: &std::path::Path) {
     let mut id: Option<String> = None;
     if url.starts_with("mxc") {
         (url, id) = parse_matrix_image_url(url.as_str());
+    } else {
+        // Parse the image url to get the ID
+        id = Some(Url::parse(&url).unwrap().path().to_string());
+        id = Some(id.unwrap().replace("/", ""));
+        info!("{:#?}", id)
+        
     }
+    info!("{:#?}", path);
 
     let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
+    let path = path.join(id.unwrap());
 
-    std::fs::write(path.join(id.unwrap_or(url)), data.bytes().await.unwrap().to_vec()).unwrap();
+    info!("filepath: {:#?}", path);
+    std::fs::write(path, data.bytes().await.unwrap().to_vec()).unwrap();
 }
 
 fn parse_matrix_image_url(url: &str) -> (String, Option<String>) {
