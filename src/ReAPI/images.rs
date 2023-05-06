@@ -1,6 +1,5 @@
 use super::Client;
 use crate::exit;
-use cached::SizedCache;
 use console::style;
 use serde::Serialize;
 use std::path::PathBuf;
@@ -34,12 +33,7 @@ impl Image {
 }
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
-#[cached::proc_macro::cached(
-    type = "SizedCache<String, Image>",
-    create = "{ SizedCache::with_size(10_000) }",
-    convert = r#"{ format!("{}", url) }"#
-)]
-pub fn get_image(client: &Client, url: String) -> Image {
+pub async fn get_image(client: &Client, url: String, path: &std::path::Path) {
     info!(target: "get_image", "Getting image: {}", url);
     let mut url = url;
     let mut id: Option<String> = None;
@@ -47,13 +41,9 @@ pub fn get_image(client: &Client, url: String) -> Image {
         (url, id) = parse_matrix_image_url(url.as_str());
     }
 
-    let data = client.reqwest_client.get(url.clone()).send().unwrap();
+    let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
 
-    Image {
-        extension: get_image_extension(&data.headers()),
-        id: id.unwrap_or(url),
-        data: data.bytes().unwrap().to_vec(),
-    }
+    std::fs::write(path.join(id.unwrap_or(url)), data.bytes().await.unwrap().to_vec()).unwrap();
 }
 
 fn parse_matrix_image_url(url: &str) -> (String, Option<String>) {
@@ -109,17 +99,17 @@ fn get_image_extension(headers: &reqwest::header::HeaderMap) -> String {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn get_image() {
-        let image = super::get_image(
-            &super::super::new_client(true),
-            "mxc://reddit.com/dwdprq7pxbva1/".to_string(),
-        );
-
-        image.export_to(std::path::PathBuf::from(
-            "./test_resources/test_cases/ReAPI/images/get_images/",
-        ));
-
+    #[tokio::test]
+    async fn get_image() {
+        let client = super::super::new_client(true);
+        let _output = 
+                super::get_image(
+                    &client,
+                    "mxc://reddit.com/dwdprq7pxbva1/".to_string(),
+                    std::path::Path::new("./test_resources/ReAPI/images/get_images")
+                ).await;
+            
+    
         assert!(std::path::PathBuf::from(
             "./test_resources/test_cases/ReAPI/images/get_images/dwdprq7pxbva1.gif"
         )

@@ -23,15 +23,15 @@ pub use users::get_user;
 pub use users::User;
 
 pub struct Client {
-    reqwest_client: reqwest::blocking::Client,
+    reqwest_client: reqwest::Client,
     bearer: Option<String>,
 }
 
 pub fn new_client(debug: bool) -> Client {
     // Build the client
-    let client: reqwest::blocking::Client;
+    let client: reqwest::Client;
     if debug {
-        client = reqwest::blocking::Client::builder()
+        client = reqwest::Client::builder()
             .cookie_store(true)
             .timeout(std::time::Duration::from_secs(60))
             .danger_accept_invalid_certs(true) // Used in development to trust a proxy
@@ -39,7 +39,7 @@ pub fn new_client(debug: bool) -> Client {
             .build()
             .expect("Error making Reqwest Client");
     } else {
-        client = reqwest::blocking::Client::builder()
+        client = reqwest::Client::builder()
             .cookie_store(true)
             .timeout(std::time::Duration::from_secs(60))
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")

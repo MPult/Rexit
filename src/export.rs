@@ -22,20 +22,6 @@ pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
             );
 
             output_buffer.push_str(line.as_str());
-        } else if let ReAPI::Content::Image(image) = message.content {
-            let image_text = format!("FILE: {}", image.id);
-
-            let line: String = format!(
-                "[{}] {}: {}\n",
-                message
-                    .timestamp
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-                    .to_string(),
-                message.author,
-                image_text
-            );
-
-            output_buffer.push_str(line.as_str());
         }
     }
 
@@ -73,18 +59,6 @@ pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
                 message.author,
                 text
             );
-        } else if let ReAPI::Content::Image(image) = message.content {
-            let image_text = format!("FILE: {}", image.id);
-
-            line = format!(
-                "{}, {}, {},",
-                message
-                    .timestamp
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-                    .to_string(),
-                message.author,
-                image_text
-            );
         }
 
         let mut file = OpenOptions::new()
@@ -95,19 +69,6 @@ pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
 
         if let Err(e) = writeln!(file, "{}", line) {
             eprintln!("Couldn't write to file: {}", e);
-        }
-    }
-}
-
-/// Export images from chats
-pub fn export_room_images(room: ReAPI::Room, out_folder: &Path) {
-    for message in room.messages() {
-        if let ReAPI::Content::Image(image) = message.content {
-            std::fs::write(
-                out_folder.join(format!("messages/images/{}.{}", image.id, image.extension)),
-                image.data,
-            )
-            .unwrap();
         }
     }
 }

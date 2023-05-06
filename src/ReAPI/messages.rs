@@ -12,7 +12,6 @@ pub struct Message {
 
 #[derive(Debug, Clone, Serialize)]
 pub enum Content {
-    Image(super::Image),
     Message(String),
 }
 
@@ -47,7 +46,7 @@ struct InternalImageInfo {
     mimetype: String,
 }
 
-pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
+pub async fn list_messages(client: &Client, id: String) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
     let mut batch: String = String::new();
     // Loop over the batching
@@ -61,11 +60,12 @@ pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
             .get(url)
             .header("Authorization", format!("Bearer {}", client.bearer_token()))
             .send()
+            .await
             .expect("Failed to send HTTP request; to obtain messages");
 
         // Deserialize response
         let messages: Result<InternalMessages, serde_json::Error> =
-            serde_json::from_str(response.text().unwrap().as_str());
+            serde_json::from_str(response.text().await.unwrap().as_str());
         let messages = messages.unwrap();
         output.reserve(messages.chunk.len());
 
@@ -75,17 +75,14 @@ pub fn list_messages(client: &Client, id: String) -> Vec<Message> {
             if message.content.url.is_some() {
                 // Is a file
                 output.push(Message {
-                    author: super::get_user(client, message.sender).displayname,
+                    author: super::get_user(client, message.sender).await.displayname,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Image(super::images::get_image(
-                        &client,
-                        message.content.url.unwrap(),
-                    )),
+                    content: Content::Message(message.content.body.unwrap()),
                 })
             } else if message.content.body.is_some() {
                 // Text Message
                 output.push(Message {
-                    author: super::get_user(client, message.sender).displayname,
+                    author: super::get_user(client, message.sender).await.displayname,
                     timestamp: unix_millis_to_utc(message.timestamp),
                     content: Content::Message(message.content.body.unwrap()),
                 })
@@ -112,18 +109,18 @@ fn unix_millis_to_utc(unix_time: i64) -> chrono::DateTime<Utc> {
 mod tests {
     use super::super::new_client;
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn list_messages() {
+    async fn list_messages() {
         let (username, password) = get_login();
 
         let mut client = new_client(true);
 
-        client.login(username, password);
+        client.login(username, password).await;
 
         let rooms = super::super::download_rooms(&client);
 
-        let messages = super::list_messages(&client, rooms[1].clone().id);
+        let messages = super::list_messages(&client, rooms.await[1].clone().id).await;
         println!("{:#?}", messages);
     }
 

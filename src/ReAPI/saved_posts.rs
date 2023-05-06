@@ -18,7 +18,7 @@ pub struct Post {
     pub img_url: Vec<String>,
 }
 
-pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> {
+pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> {
     info!("Getting Saved Posts");
 
     let mut after_token = String::new();
@@ -31,9 +31,10 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
             .reqwest_client
             .get(url)
             .send()
+            .await
             .expect("Failed to send HTTP request");
 
-        let saved_posts: Result<Value, _> = serde_json::from_str(response.text().unwrap().as_str());
+        let saved_posts: Result<Value, _> = serde_json::from_str(response.text().await.unwrap().as_str());
         if saved_posts.is_err() {
             return vec![];
         }
@@ -54,7 +55,7 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
                     let final_url = format!("https://i.redd.it{}", fixed_url.path());
 
                     if image_download {
-                        images::get_image(&client, final_url.clone());
+                        images::get_image(&client, final_url.clone(), &std::path::PathBuf::from("./out/images")).await;
                     }
 
                     images.push(final_url.to_owned())
