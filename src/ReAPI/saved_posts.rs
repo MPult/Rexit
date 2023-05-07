@@ -1,5 +1,3 @@
-use url::Url;
-
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -18,7 +16,7 @@ pub struct Post {
     pub img_url: Vec<String>,
 }
 
-pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> {
+pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> {
     info!("Getting Saved Posts");
 
     let mut after_token = String::new();
@@ -31,9 +29,11 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
             .reqwest_client
             .get(url)
             .send()
+            .await
             .expect("Failed to send HTTP request");
 
-        let saved_posts: Result<Value, _> = serde_json::from_str(response.text().unwrap().as_str());
+        let saved_posts: Result<Value, _> =
+            serde_json::from_str(response.text().await.unwrap().as_str());
         if saved_posts.is_err() {
             return vec![];
         }
@@ -47,17 +47,26 @@ pub fn download_saved_posts(client: &Client, image_download: bool) -> Vec<Post> 
             // If post has images
             if !post["data"]["preview"].is_null() {
                 for image in post["data"]["preview"]["images"].as_array().unwrap() {
+                    // The preview URL is HTML encoded (&amp; etc) so we need to decode it
+                    let url = image["source"]["url"].as_str().unwrap().to_string();
+                    let url = html_escape::decode_html_entities(&url);
+
                     // By default these urls are for the reddit cache that requires auth
                     // but the img ID is same as the non-cached one (i.redd.it/)
-                    let url = image["source"]["url"].as_str().unwrap().to_string();
-                    let fixed_url = Url::parse(&url).unwrap();
-                    let final_url = format!("https://i.redd.it{}", fixed_url.path());
+                    // let url = image["source"]["url"].as_str().unwrap().to_string();
+                    // let fixed_url = Url::parse(&url).unwrap();
+                    // let final_url = format!("https://i.redd.it{}", fixed_url.path());
 
                     if image_download {
-                        images::get_image(&client, final_url.clone());
+                        images::get_image(
+                            &client,
+                            url.to_string(),
+                            &std::path::PathBuf::from("./out/saved_posts/images"),
+                        )
+                        .await;
                     }
 
-                    images.push(final_url.to_owned())
+                    images.push(url.to_string())
                 }
             }
 

@@ -20,7 +20,7 @@ impl super::Client {
     }
 
     /// Log into Reddit returning the Bearer
-    pub fn login(&mut self, username: String, password: String) {
+    pub async fn login(&mut self, username: String, password: String) {
         // URL encode the password & username
         let encoded_password: String;
         let username = urlencoding::encode(&username);
@@ -39,11 +39,12 @@ impl super::Client {
             .get("https://www.reddit.com/login/")
             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36")
             .send()
+            .await
             .expect("Failed to send HTTP request; to obtain CSRF token");
 
         debug!("CSRF Request Response: {:?}", resp);
         let body = resp.text();
-        let body = body.expect("Failed to read response body");
+        let body = body.await.expect("Failed to read response body");
 
         // Regex to find the CSRF token in the body of the HTML
         let csrf =
@@ -81,6 +82,7 @@ impl super::Client {
         .header("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
         .body(form_data)
         .send()
+        .await
         .expect("Failed to send HTTP request; to obtain session token");
 
         // Request / to get the bearer token
@@ -96,13 +98,14 @@ impl super::Client {
         .header("Sec-Fetch-User", "?1")
         .header("Te", "trailers")
         .send()
+        .await
         .expect("Error getting bearer token");
 
         // Extract the Bearer Token from the JSON response
         let bearer_regex = Regex::new(r#"accessToken":"([^"]+)"#).unwrap();
 
         let mut bearer_token: String = String::default();
-        for i in bearer_regex.captures_iter(&response.text().unwrap()) {
+        for i in bearer_regex.captures_iter(&response.text().await.unwrap()) {
             for i in i.get(1).iter() {
                 bearer_token = String::from(i.as_str().clone());
                 debug!("Bearer Token: {}", bearer_token.trim());
@@ -130,6 +133,7 @@ impl super::Client {
         .header("Te", "trailers")
         .body(data)
         .send()
+        .await
         .expect("Failed to send HTTP request; to login to matrix");
 
         debug!("Matrix login response: {:#?}", response);
@@ -144,13 +148,13 @@ impl super::Client {
 
 #[cfg(test)]
 mod tests {
-    #[test]
+    #[tokio::test]
     #[ignore = "creds"]
-    fn login() {
+    async fn login() {
         let mut client = super::super::new_client(true);
         let (username, password) = get_login();
 
-        client.login(username, password);
+        client.login(username, password).await;
     }
 
     fn get_login() -> (String, String) {
