@@ -22,7 +22,8 @@ pub async fn get_user(client: &Client, id: String) -> User {
         .await
         .expect("Failed to send HTTP request");
 
-    let value: serde_json::Value = serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
+    let value: serde_json::Value =
+        serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
 
     debug!("Found user: {}", value["displayname"].clone());
 

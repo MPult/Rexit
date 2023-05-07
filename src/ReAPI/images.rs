@@ -2,8 +2,8 @@ use super::Client;
 use crate::exit;
 use console::style;
 use serde::Serialize;
-use url::Url;
 use std::path::PathBuf;
+use url::Url;
 
 #[derive(std::hash::Hash, Clone, Debug, Serialize)]
 pub struct Image {
@@ -35,25 +35,29 @@ impl Image {
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
 pub async fn get_image(client: &Client, url: String, path: &std::path::Path) {
-    info!(target: "get_image", "Getting image: {}", url);
+    info!(target: "get_image", "Getting image: {}...", &url[0..30]);
     let mut url = url;
     let mut id: Option<String> = None;
     if url.starts_with("mxc") {
+        // Matrix images
         (url, id) = parse_matrix_image_url(url.as_str());
+        let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
+        let path = path
+            .join(id.unwrap())
+            .with_extension(get_image_extension(data.headers()));
+
+        std::fs::write(path, data.bytes().await.unwrap().to_vec()).unwrap();
     } else {
+        // Litteraly any other image
         // Parse the image url to get the ID
         id = Some(Url::parse(&url).unwrap().path().to_string());
         id = Some(id.unwrap().replace("/", ""));
-        info!("{:#?}", id)
-        
+
+        let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
+        let path = path.join(id.unwrap());
+
+        std::fs::write(path, data.bytes().await.unwrap().to_vec()).unwrap();
     }
-    info!("{:#?}", path);
-
-    let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
-    let path = path.join(id.unwrap());
-
-    info!("filepath: {:#?}", path);
-    std::fs::write(path, data.bytes().await.unwrap().to_vec()).unwrap();
 }
 
 fn parse_matrix_image_url(url: &str) -> (String, Option<String>) {
@@ -112,14 +116,13 @@ mod tests {
     #[tokio::test]
     async fn get_image() {
         let client = super::super::new_client(true);
-        let _output = 
-                super::get_image(
-                    &client,
-                    "mxc://reddit.com/dwdprq7pxbva1/".to_string(),
-                    std::path::Path::new("./test_resources/ReAPI/images/get_images")
-                ).await;
-            
-    
+        let _output = super::get_image(
+            &client,
+            "mxc://reddit.com/dwdprq7pxbva1/".to_string(),
+            std::path::Path::new("./test_resources/ReAPI/images/get_images"),
+        )
+        .await;
+
         assert!(std::path::PathBuf::from(
             "./test_resources/test_cases/ReAPI/images/get_images/dwdprq7pxbva1.gif"
         )

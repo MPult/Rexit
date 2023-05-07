@@ -11,6 +11,7 @@ cached = "0.43.*"
 chrono = { version = "0.4.*", features = ["serde"] }
 clap = { version = "4.2.*", features = ["derive"] }
 console = { version = "0.15.*", features = ["windows-console-colors"] }
+html-escape = "0.2.13"
 inquire = "0.6.*"
 log = "0.4.*"
 pretty_env_logger = "0.4.*"

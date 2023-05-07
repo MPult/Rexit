@@ -1,4 +1,4 @@
-use super::Client;
+use super::{images, Client};
 use chrono::{TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -46,7 +46,7 @@ struct InternalImageInfo {
     mimetype: String,
 }
 
-pub async fn list_messages(client: &Client, id: String) -> Vec<Message> {
+pub async fn list_messages(client: &Client, id: String, image_download: bool) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
     let mut batch: String = String::new();
     // Loop over the batching
@@ -77,8 +77,17 @@ pub async fn list_messages(client: &Client, id: String) -> Vec<Message> {
                 output.push(Message {
                     author: super::get_user(client, message.sender).await.displayname,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Message(message.content.body.unwrap()),
-                })
+                    content: Content::Message(message.content.body.clone().unwrap()),
+                });
+                // If option is set download the image
+                if image_download {
+                    images::get_image(
+                        &client,
+                        message.content.url.unwrap(),
+                        &std::path::PathBuf::from("./out/messages/images"),
+                    )
+                    .await;
+                }
             } else if message.content.body.is_some() {
                 // Text Message
                 output.push(Message {
@@ -118,9 +127,9 @@ mod tests {
 
         client.login(username, password).await;
 
-        let rooms = super::super::download_rooms(&client);
+        let rooms = super::super::download_rooms(&client, true);
 
-        let messages = super::list_messages(&client, rooms.await[1].clone().id).await;
+        let messages = super::list_messages(&client, rooms.await[1].clone().id, true).await;
         println!("{:#?}", messages);
     }
 

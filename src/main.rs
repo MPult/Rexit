@@ -88,27 +88,23 @@ async fn main() {
     // Creates out folders
     std::fs::create_dir(&args.out).unwrap();
     std::fs::create_dir(args.out.join("messages")).unwrap();
-    std::fs::create_dir(args.out.join("images")).unwrap();
     std::fs::create_dir(args.out.join("saved_posts")).unwrap();
 
     // Make sure there is an images folder to output to if images is true
     if args.images {
         std::fs::create_dir(args.out.join("messages/images")).unwrap();
+        std::fs::create_dir(args.out.join("saved_posts/images")).unwrap();
     }
 
     // Get list of rooms
-    let rooms = ReAPI::download_rooms(&client).await;
+    let rooms = ReAPI::download_rooms(&client, args.images).await;
 
     // Gets saved posts
     let saved_posts = ReAPI::download_saved_posts(&client, args.images);
 
     // Export logic
     // Exports messages to files. Add image if its set to args
-    let mut export_formats: Vec<&str> = args.formats.split(",").collect();
-
-    if args.images == true {
-        export_formats.push("images")
-    }
+    let export_formats: Vec<&str> = args.formats.split(",").collect();
 
     // Export chats
     for room in rooms {
