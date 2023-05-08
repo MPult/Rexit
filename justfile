@@ -3,11 +3,12 @@ set windows-shell := ["powershell.exe"]
 set dotenv-load := true
 default: test
 
-run:
-  cargo run -- -f txt,json,csv --images
+messages:
+  cargo run -- messages -f txt,json,csv --images
 
-debug:
-  cargo run -- -f txt,json,csv --images --debug
+saved:
+  cargo run -- saved -f txt,json,csv --images
+
 
 test:
     cargo test

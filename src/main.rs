@@ -8,7 +8,8 @@ extern crate log;
 use console::style;
 use export::export_saved_posts;
 use inquire::{self, Password, Text};
-use std::env;
+use std::{env, path::PathBuf};
+use ReAPI::{Client, Message};
 
 // import other files
 mod ReAPI;
@@ -36,16 +37,75 @@ async fn main() {
     let args = Cli::parse();
 
     // Create an ReAPI client
-    let mut client = ReAPI::new_client(args.debug);
+    let client: Client;
 
-    if args.debug {
+    // Init the program
+    if let cli::Commands::Messages {
+        formats,
+        token,
+        images,
+        out,
+        debug,
+    } = args.command
+    {
+        // Initialize
+        client = init(debug, token, images, out.clone()).await;
+
+        // Get list of rooms
+        let rooms = ReAPI::download_rooms(&client, images).await;
+
+        // Exports messages to files.
+        let export_formats: Vec<&str> = formats.split(",").collect();
+
+        // Export chats
+        for room in rooms {
+            for format in export_formats.clone() {
+                match format {
+                    "txt" => export::export_room_chats_txt(room.to_owned(), &out),
+                    "json" => export::export_room_chats_json(room.to_owned(), &out),
+                    "csv" => export::export_room_chats_csv(room.to_owned(), &out),
+                    _ => println!("Not valid Format"),
+                }
+            }
+        }
+    } else if let cli::Commands::Saved {
+        formats,
+        token,
+        images,
+        out,
+        debug,
+    } = args.command
+    {
+        // Initialize
+        client = init(debug, token, images, out.clone()).await;
+
+        // Gets saved posts
+        let saved_posts = ReAPI::download_saved_posts(&client, images);
+
+        let saved_posts = saved_posts.await;
+
+        // Exports messages to files.
+        let export_formats: Vec<&str> = formats.split(",").collect();
+
+        // Export Saved posts
+        export_saved_posts(saved_posts, export_formats, &out);
+    }
+}
+
+/// Handles all the init stuff for rexit
+async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
+    // Create a Client
+    let mut client = ReAPI::new_client(debug);
+
+    // Handle the debug stuff
+    if debug {
         println!("{}\n{}", 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
             style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
     }
 
-    // Decide what auth flow to use
-    if args.token == true {
+    // Handle the three auth flows
+    if token == true {
         // Use the bearer token flow
         trace!("Bearer token auth flow");
 
@@ -76,50 +136,24 @@ async fn main() {
 
         client.login(username.to_owned(), password.to_owned()).await;
     }
-
     info!("Login Successful");
 
     // Handle output folder stuff
     // Deletes the output folder (we append the batches so this is necessary)
-    if args.out.exists() {
-        std::fs::remove_dir_all(&args.out).expect("Error deleting out folder");
+    if out.exists() {
+        std::fs::remove_dir_all(out.clone()).expect("Error deleting out folder");
     }
 
     // Creates out folders
-    std::fs::create_dir(&args.out).unwrap();
-    std::fs::create_dir(args.out.join("messages")).unwrap();
-    std::fs::create_dir(args.out.join("saved_posts")).unwrap();
+    std::fs::create_dir(out.clone()).unwrap();
+    std::fs::create_dir(out.join("messages")).unwrap();
+    std::fs::create_dir(out.join("saved_posts")).unwrap();
 
     // Make sure there is an images folder to output to if images is true
-    if args.images {
-        std::fs::create_dir(args.out.join("messages/images")).unwrap();
-        std::fs::create_dir(args.out.join("saved_posts/images")).unwrap();
+    if images {
+        std::fs::create_dir(out.join("messages/images")).unwrap();
+        std::fs::create_dir(out.join("saved_posts/images")).unwrap();
     }
 
-    // Get list of rooms
-    let rooms = ReAPI::download_rooms(&client, args.images).await;
-
-    // Gets saved posts
-    let saved_posts = ReAPI::download_saved_posts(&client, args.images);
-
-    // Export logic
-    // Exports messages to files. Add image if its set to args
-    let export_formats: Vec<&str> = args.formats.split(",").collect();
-
-    // Export chats
-    for room in rooms {
-        for format in export_formats.clone() {
-            match format {
-                "txt" => export::export_room_chats_txt(room.to_owned(), &args.out),
-                "json" => export::export_room_chats_json(room.to_owned(), &args.out),
-                "csv" => export::export_room_chats_csv(room.to_owned(), &args.out),
-                _ => println!("Not valid Format"),
-            }
-        }
-    }
-
-    let saved_posts = saved_posts.await;
-
-    // Export Saved posts
-    export_saved_posts(saved_posts, export_formats, &args.out);
+    return client;
 }
