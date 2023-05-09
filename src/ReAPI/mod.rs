@@ -5,8 +5,9 @@ mod images;
 mod login;
 mod messages;
 mod rooms;
-mod saved_posts;
 mod users;
+pub(crate) mod saved_posts;
+pub(crate) mod subreddit;
 
 pub use images::Image;
 
@@ -14,7 +15,11 @@ pub use rooms::download_rooms;
 pub use rooms::Room;
 
 pub use saved_posts::download_saved_posts;
-pub use saved_posts::Post;
+pub use saved_posts::SavedPost;
+
+pub use subreddit::download_subreddit;
+pub use subreddit::Post;
+
 
 pub use messages::Content;
 pub use messages::Message;

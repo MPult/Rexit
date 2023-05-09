@@ -58,4 +58,29 @@ pub enum Commands {
         #[arg(short, long)]
         debug: bool
     },
+    Subreddit {
+        /// Name of the subreddit (Example: r/redditdev)
+        #[arg(short, long)]
+        name: String,
+
+        /// The formats to export to. Options: csv,json,txt
+        #[arg(short, long)]
+        formats: String,
+
+        /// To use the bearer token flow, instead of username and password
+        #[arg(short, long)]
+        token: bool,
+
+        /// Output images too (outputs to images folder)
+        #[arg(short, long)]
+        images: bool,
+
+        /// What folder to output to
+        #[arg(short, long, default_value = "./out")]
+        out: PathBuf,
+
+        // Trust proxy certificates
+        #[arg(short, long)]
+        debug: bool
+    },
 }

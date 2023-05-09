@@ -14,10 +14,10 @@ use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
 use console::style;
-use export::export_saved_posts;
+use export::{export_saved_posts, export_subreddit};
 use inquire::{self, Password, Text};
 use log4rs::filter::threshold::ThresholdFilter;
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use ReAPI::Client;
 
 // import other files
@@ -86,6 +86,28 @@ async fn main() {
 
         // Export Saved posts
         export_saved_posts(saved_posts, export_formats, &out);
+    } else if let cli::Commands::Subreddit {
+        name,
+        formats,
+        token,
+        images,
+        out,
+        debug,
+    } = args.command
+    {
+        // Initialize
+        client = init(debug, token, images, out.clone()).await;
+
+        // Gets saved posts
+        let subreddit = ReAPI::download_subreddit(&client,name, images);
+
+        let subreddit = subreddit.await;
+
+        // Exports messages to files.
+        let export_formats: Vec<&str> = formats.split(",").collect();
+
+        // Export Saved posts
+        export_subreddit(subreddit, export_formats, &out);
     }
 }
 
@@ -190,11 +212,15 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
     std::fs::create_dir(out.clone()).unwrap();
     std::fs::create_dir(out.join("messages")).unwrap();
     std::fs::create_dir(out.join("saved_posts")).unwrap();
+    std::fs::create_dir(out.join("subreddit")).unwrap();
+
 
     // Make sure there is an images folder to output to if images is true
     if images {
         std::fs::create_dir(out.join("messages/images")).unwrap();
         std::fs::create_dir(out.join("saved_posts/images")).unwrap();
+        std::fs::create_dir(out.join("subreddit/images")).unwrap();
+
     }
 
     return client;

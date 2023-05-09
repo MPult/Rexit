@@ -6,9 +6,20 @@ default: test
 messages:
   cargo run -- messages -f txt,json,csv --images
 
+messages-dbg:
+  cargo run -- messages -f txt,json,csv --images --debug
+
+subreddit:
+  cargo run -- subreddit -n r/rexitTest -f txt,json,csv --images
+
+subreddit-dbg:
+  cargo run -- subreddit -n r/rexitTest -f txt,json,csv --images --debug
+
 saved:
   cargo run -- saved -f txt,json,csv --images
 
+saved-dbg:
+  cargo run -- saved -f txt,json,csv --images --debug
 
 test:
     cargo test
