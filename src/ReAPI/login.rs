@@ -1,7 +1,7 @@
 use console::style;
 use regex::Regex;
-use log::{error, info, warn, debug, trace};
-use log4rs;
+use log::{debug};
+
 impl super::Client {
     pub fn logged_in(&self) -> bool {
         self.bearer.is_some()

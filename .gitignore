@@ -13,4 +13,4 @@
 # REXIT EXPORT FILES
 /out
 /out1
-/log
+*.log

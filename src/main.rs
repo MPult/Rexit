@@ -4,13 +4,20 @@
 // extern crate pretty_env_logger;
 // #[macro_use]
 // extern crate log;
-use log::{debug, error, info, trace, warn};
-use log4rs;
+use log::{info, trace, warn};
+// use log4rs;
+
+use log::LevelFilter;
+use log4rs::append::console::{ConsoleAppender, Target};
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 
 use console::style;
 use export::export_saved_posts;
 use inquire::{self, Password, Text};
-use std::{env, path::PathBuf};
+use log4rs::filter::threshold::ThresholdFilter;
+use std::{path::PathBuf};
 use ReAPI::Client;
 
 // import other files
@@ -92,13 +99,52 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
         println!("{}\n{}", 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
             style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
-
-        // Initialize logging
-        log4rs::init_file("./log4rs-debug.yaml", Default::default()).unwrap();
-    } else {
-        // Initialize logging
-        log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
     }
+
+    // Initialize logging
+    let level = log::LevelFilter::Info;
+    let file_path = "./rexit.log";
+
+    // Build a stderr logger.
+
+    let stderr = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new(
+            "{d(%Y-%m-%d %H:%M)(utc)} - {h({l})}: {m}{n}",
+        )))
+        .target(Target::Stderr)
+        .build();
+
+    // Logging to log file.
+    let logfile = FileAppender::builder()
+        // Pattern: https://docs.rs/log4rs/*/log4rs/encode/pattern/index.html
+        .encoder(Box::new(PatternEncoder::new(
+            "{d(%Y-%m-%d %H:%M)(utc)} - {h({l})}: {m}{n}",
+        )))
+        .build(file_path)
+        .unwrap();
+
+    // Log Trace level output to file where trace is the default level
+    // and the programmatically specified level to stderr.
+    let config = Config::builder()
+        .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        .appender(
+            Appender::builder()
+                .filter(Box::new(ThresholdFilter::new(level)))
+                .build("stderr", Box::new(stderr)),
+        )
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .appender("stderr")
+                .build(LevelFilter::Trace),
+        )
+        .unwrap();
+
+    // Use this to change log levels at runtime.
+    // This means you can change the default log level to trace
+    // if you are trying to debug an issue and need more logs on then turn it off
+    // once you are done.
+    let _handle = log4rs::init_config(config);
 
     // Handle the three auth flows
     if token == true {

@@ -1,7 +1,7 @@
 use super::Client;
 use cached::SizedCache;
-use log::{error, info, warn, debug, trace};
-use log4rs;
+use log::{debug};
+
 #[derive(Clone, Debug)]
 pub struct User {
     pub id: String,

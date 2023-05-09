@@ -1,8 +1,8 @@
 use super::Client;
 use serde::Serialize;
 use serde_json::Value;
-use log::{error, info, warn, debug, trace};
-use log4rs;
+use log::{info};
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Room {
     pub id: String,

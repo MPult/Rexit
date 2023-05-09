@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use log::{error, info, warn, debug, trace};
-use log4rs;
+use log::{info};
 use super::{images, Client};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
