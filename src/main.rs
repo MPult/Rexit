@@ -9,7 +9,7 @@ use console::style;
 use export::export_saved_posts;
 use inquire::{self, Password, Text};
 use std::{env, path::PathBuf};
-use ReAPI::{Client, Message};
+use ReAPI::Client;
 
 // import other files
 mod ReAPI;
