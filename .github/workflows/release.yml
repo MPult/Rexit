@@ -30,6 +30,10 @@ jobs:
           git push
           git tag "v${{ github.event.inputs.version }}"
           git push --tags
+      - name: cargo publish
+        run: |
+          cargo login
+          cargo publish
 
   publish:
     name: Publish for ${{ matrix.os }}
