@@ -9,7 +9,7 @@ appenders:
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
 root:
-  level: info
+  level: trace
   appenders:
     - my_stdout
     - my_file_logger

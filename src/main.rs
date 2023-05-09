@@ -4,7 +4,7 @@
 // extern crate pretty_env_logger;
 // #[macro_use]
 // extern crate log;
-use log::{error, info, warn, debug, trace};
+use log::{debug, error, info, trace, warn};
 use log4rs;
 
 use console::style;
@@ -21,23 +21,8 @@ mod macros;
 
 use cli::{Cli, Parser};
 
-/// Prepares the logger according to the `RUST_LOG` environment variable. If none set it is set to `INFO`
-/// Then according to the auth flow either username and password are inquired; or just a bearer token.
-/// It runs the sync function, and handles the export.
 #[tokio::main]
 async fn main() {
-    // Initialize logging
-    // If no log level is set => set to info
-    // match env::var("RUST_LOG") {
-    //     Ok(value) => debug!("Detected log level: {value}"),
-    //     Err(_) => env::set_var("RUST_LOG", "INFO"),
-    // }
-
-    log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
-
-
-    // pretty_env_logger::init();
-
     // Parse the CLI args
     let args = Cli::parse();
 
@@ -107,6 +92,12 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
         println!("{}\n{}", 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
             style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
+
+        // Initialize logging
+        log4rs::init_file("./log4rs-debug.yaml", Default::default()).unwrap();
+    } else {
+        // Initialize logging
+        log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
     }
 
     // Handle the three auth flows
