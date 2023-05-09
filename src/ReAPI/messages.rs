@@ -1,7 +1,8 @@
 use super::{images, Client};
 use chrono::{TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-
+use log::{error, info, warn, debug, trace};
+use log4rs;
 /// Struct for a singular message.
 #[derive(Debug, Clone, Serialize)]
 pub struct Message {
@@ -130,7 +131,6 @@ mod tests {
         let rooms = super::super::download_rooms(&client, true);
 
         let messages = super::list_messages(&client, rooms.await[1].clone().id, true).await;
-        println!("{:#?}", messages);
     }
 
     fn get_login() -> (String, String) {

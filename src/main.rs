@@ -1,9 +1,11 @@
 //! This crate provides a easy way of exporting reddit chats into a few formats (including images).
 //! This document is intended for developers/contributors, see the [README](https://github.com/MPult/Rexit) for user-centric documentation.
 
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate log;
+// extern crate pretty_env_logger;
+// #[macro_use]
+// extern crate log;
+use log::{error, info, warn, debug, trace};
+use log4rs;
 
 use console::style;
 use export::export_saved_posts;
@@ -26,12 +28,15 @@ use cli::{Cli, Parser};
 async fn main() {
     // Initialize logging
     // If no log level is set => set to info
-    match env::var("RUST_LOG") {
-        Ok(value) => debug!("Detected log level: {value}"),
-        Err(_) => env::set_var("RUST_LOG", "INFO"),
-    }
+    // match env::var("RUST_LOG") {
+    //     Ok(value) => debug!("Detected log level: {value}"),
+    //     Err(_) => env::set_var("RUST_LOG", "INFO"),
+    // }
 
-    pretty_env_logger::init();
+    log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
+
+
+    // pretty_env_logger::init();
 
     // Parse the CLI args
     let args = Cli::parse();
