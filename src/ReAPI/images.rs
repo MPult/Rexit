@@ -119,7 +119,7 @@ mod tests {
         let _output = super::get_image(
             &client,
             "mxc://reddit.com/dwdprq7pxbva1/".to_string(),
-            std::path::Path::new("./test_resources/ReAPI/images/get_images"),
+            std::path::Path::new("./test_resources/test_cases/ReAPI/images/get_images"),
         )
         .await;
 
