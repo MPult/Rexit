@@ -150,7 +150,7 @@ pub fn export_subreddit(post_array: Vec<ReAPI::subreddit::Post>, formats: Vec<&s
 
     if formats.contains(&"csv") {
         // Export to CSV
-        let path = out_folder.join("subreddit/subreddit.txt.csv");
+        let path = out_folder.join("subreddit/subreddit.csv");
         let mut output_buffer: String = "Title, Subreddit, Permalink, Images\n".to_owned();
 
         for post in post_array {

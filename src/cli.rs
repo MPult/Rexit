@@ -18,7 +18,7 @@ pub struct Cli {
 pub enum Commands {
     Messages {
         /// The formats to export to. Options: csv,json,txt
-        #[arg(short, long)]
+        #[arg(short, long, default_value = "txt,json,csv")]
         formats: String,
 
         /// To use the bearer token flow, instead of username and password
@@ -39,7 +39,7 @@ pub enum Commands {
     },
     Saved {
         /// The formats to export to. Options: csv,json,txt
-        #[arg(short, long)]
+        #[arg(short, long, default_value = "txt,json,csv")]
         formats: String,
 
         /// To use the bearer token flow, instead of username and password
@@ -60,11 +60,10 @@ pub enum Commands {
     },
     Subreddit {
         /// Name of the subreddit (Example: r/redditdev)
-        #[arg(short, long)]
         name: String,
 
         /// The formats to export to. Options: csv,json,txt
-        #[arg(short, long)]
+        #[arg(short, long, default_value = "txt,json,csv")]
         formats: String,
 
         /// To use the bearer token flow, instead of username and password

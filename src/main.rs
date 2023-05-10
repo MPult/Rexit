@@ -46,7 +46,7 @@ async fn main() {
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone()).await;
+        client = init(debug, token, images, out.clone(), true).await;
 
         // Get list of rooms
         let rooms = ReAPI::download_rooms(&client, images).await;
@@ -74,7 +74,7 @@ async fn main() {
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone()).await;
+        client = init(debug, token, images, out.clone(), true).await;
 
         // Gets saved posts
         let saved_posts = ReAPI::download_saved_posts(&client, images);
@@ -96,10 +96,10 @@ async fn main() {
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone()).await;
+        client = init(debug, token, images, out.clone(), false).await;
 
         // Gets saved posts
-        let subreddit = ReAPI::download_subreddit(&client,name, images);
+        let subreddit = ReAPI::download_subreddit(&client, name, images);
 
         let subreddit = subreddit.await;
 
@@ -112,7 +112,7 @@ async fn main() {
 }
 
 /// Handles all the init stuff for rexit
-async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
+async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) -> Client {
     // Create a Client
     let mut client = ReAPI::new_client(debug);
 
@@ -168,39 +168,43 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
     // once you are done.
     let _handle = log4rs::init_config(config);
 
-    // Handle the three auth flows
-    if token == true {
-        // Use the bearer token flow
-        trace!("Bearer token auth flow");
+    // Authenticate if needed
+    if auth {
+        // Handle the three auth flows
+        if token == true {
+            // Use the bearer token flow
+            trace!("Bearer token auth flow");
 
-        client.login_with_token(
-            Password::new("Your Bearer Token")
+            client.login_with_token(
+                Password::new("Your Bearer Token")
+                    .prompt()
+                    .expect("Error reading bearer token"),
+            );
+        } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok()
+        {
+            warn!("Found password and username enviornment variables");
+
+            let username = std::env::var("REXIT_USERNAME").unwrap();
+            let password = std::env::var("REXIT_PASSWORD").unwrap();
+            client.login(username, password).await;
+        } else {
+            // Use the username password auth flow
+            trace!("Password auth flow");
+
+            let username = Text::new("Your Reddit Username")
                 .prompt()
-                .expect("Error reading bearer token"),
-        );
-    } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok() {
-        warn!("Found password and username enviornment variables");
+                .expect("Error reading username");
 
-        let username = std::env::var("REXIT_USERNAME").unwrap();
-        let password = std::env::var("REXIT_PASSWORD").unwrap();
-        client.login(username, password).await;
-    } else {
-        // Use the username password auth flow
-        trace!("Password auth flow");
+            let password = Password::new("Your Reddit Password")
+                .without_confirmation()
+                .with_display_toggle_enabled()
+                .prompt()
+                .expect("Error reading password");
 
-        let username = Text::new("Your Reddit Username")
-            .prompt()
-            .expect("Error reading username");
-
-        let password = Password::new("Your Reddit Password")
-            .without_confirmation()
-            .with_display_toggle_enabled()
-            .prompt()
-            .expect("Error reading password");
-
-        client.login(username.to_owned(), password.to_owned()).await;
+            client.login(username.to_owned(), password.to_owned()).await;
+        }
+        info!("Login Successful");
     }
-    info!("Login Successful");
 
     // Handle output folder stuff
     // Deletes the output folder (we append the batches so this is necessary)
@@ -214,13 +218,11 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf) -> Client {
     std::fs::create_dir(out.join("saved_posts")).unwrap();
     std::fs::create_dir(out.join("subreddit")).unwrap();
 
-
     // Make sure there is an images folder to output to if images is true
     if images {
         std::fs::create_dir(out.join("messages/images")).unwrap();
         std::fs::create_dir(out.join("saved_posts/images")).unwrap();
         std::fs::create_dir(out.join("subreddit/images")).unwrap();
-
     }
 
     return client;
