@@ -223,6 +223,7 @@ mod tests {
         let mut posts: Vec<ReAPI::SavedPost> = Vec::new();
 
         let post = ReAPI::SavedPost {
+            body_text: "hihi".to_owned(),
             title: "Da fehlt doch was".to_owned(),
             subreddit_name: "r/hamburg".to_owned(),
             permalink: "/r/hamburg/comments/134bv4v/da_fehlt_doch_was/".to_owned(),
