@@ -1,14 +1,24 @@
 //! This crate provides a easy way of exporting reddit chats into a few formats (including images).
 //! This document is intended for developers/contributors, see the [README](https://github.com/MPult/Rexit) for user-centric documentation.
 
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate log;
+// extern crate pretty_env_logger;
+// #[macro_use]
+// extern crate log;
+use log::{info, trace, warn};
+// use log4rs;
+
+use log::LevelFilter;
+use log4rs::append::console::{ConsoleAppender, Target};
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 
 use console::style;
-use export::export_saved_posts;
+use export::{export_saved_posts, export_subreddit};
 use inquire::{self, Password, Text};
-use std::env;
+use log4rs::filter::threshold::ThresholdFilter;
+use std::path::PathBuf;
+use ReAPI::Client;
 
 // import other files
 mod ReAPI;
@@ -18,108 +28,202 @@ mod macros;
 
 use cli::{Cli, Parser};
 
-/// Prepares the logger according to the `RUST_LOG` environment variable. If none set it is set to `INFO`
-/// Then according to the auth flow either username and password are inquired; or just a bearer token.
-/// It runs the sync function, and handles the export.
 #[tokio::main]
 async fn main() {
-    // Initialize logging
-    // If no log level is set => set to info
-    match env::var("RUST_LOG") {
-        Ok(value) => debug!("Detected log level: {value}"),
-        Err(_) => env::set_var("RUST_LOG", "INFO"),
-    }
-
-    pretty_env_logger::init();
-
     // Parse the CLI args
     let args = Cli::parse();
 
     // Create an ReAPI client
-    let mut client = ReAPI::new_client(args.debug);
+    let client: Client;
 
-    if args.debug {
+    // Init the program
+    if let cli::Commands::Messages {
+        formats,
+        token,
+        images,
+        out,
+        debug,
+    } = args.command
+    {
+        // Initialize
+        client = init(debug, token, images, out.clone(), true).await;
+
+        // Get list of rooms
+        let rooms = ReAPI::download_rooms(&client, images).await;
+
+        // Exports messages to files.
+        let export_formats: Vec<&str> = formats.split(",").collect();
+
+        // Export chats
+        for room in rooms {
+            for format in export_formats.clone() {
+                match format {
+                    "txt" => export::export_room_chats_txt(room.to_owned(), &out),
+                    "json" => export::export_room_chats_json(room.to_owned(), &out),
+                    "csv" => export::export_room_chats_csv(room.to_owned(), &out),
+                    _ => println!("Not valid Format"),
+                }
+            }
+        }
+    } else if let cli::Commands::Saved {
+        formats,
+        token,
+        images,
+        out,
+        debug,
+    } = args.command
+    {
+        // Initialize
+        client = init(debug, token, images, out.clone(), true).await;
+
+        // Gets saved posts
+        let saved_posts = ReAPI::download_saved_posts(&client, images);
+
+        let saved_posts = saved_posts.await;
+
+        // Exports messages to files.
+        let export_formats: Vec<&str> = formats.split(",").collect();
+
+        // Export Saved posts
+        export_saved_posts(saved_posts, export_formats, &out);
+    } else if let cli::Commands::Subreddit {
+        name,
+        formats,
+        token,
+        images,
+        out,
+        debug,
+    } = args.command
+    {
+        // Initialize
+        client = init(debug, token, images, out.clone(), false).await;
+
+        // Gets saved posts
+        let subreddit = ReAPI::download_subreddit(&client, name, images);
+
+        let subreddit = subreddit.await;
+
+        // Exports messages to files.
+        let export_formats: Vec<&str> = formats.split(",").collect();
+
+        // Export Saved posts
+        export_subreddit(subreddit, export_formats, &out);
+    }
+}
+
+/// Handles all the init stuff for rexit
+async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) -> Client {
+    // Create a Client
+    let mut client = ReAPI::new_client(debug);
+
+    // Handle the debug stuff
+    if debug {
         println!("{}\n{}", 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
             style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
     }
 
-    // Decide what auth flow to use
-    if args.token == true {
-        // Use the bearer token flow
-        trace!("Bearer token auth flow");
+    // Initialize logging
+    let level = log::LevelFilter::Info;
+    let file_path = "./rexit.log";
 
-        client.login_with_token(
-            Password::new("Your Bearer Token")
+    // Build a stderr logger.
+
+    let stderr = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new(
+            "{d(%Y-%m-%d %H:%M)(utc)} - {h({l})}: {m}{n}",
+        )))
+        .target(Target::Stderr)
+        .build();
+
+    // Logging to log file.
+    let logfile = FileAppender::builder()
+        // Pattern: https://docs.rs/log4rs/*/log4rs/encode/pattern/index.html
+        .encoder(Box::new(PatternEncoder::new(
+            "{d(%Y-%m-%d %H:%M)(utc)} - {h({l})}: {m}{n}",
+        )))
+        .build(file_path)
+        .unwrap();
+
+    // Log Trace level output to file where trace is the default level
+    // and the programmatically specified level to stderr.
+    let config = Config::builder()
+        .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        .appender(
+            Appender::builder()
+                .filter(Box::new(ThresholdFilter::new(level)))
+                .build("stderr", Box::new(stderr)),
+        )
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .appender("stderr")
+                .build(LevelFilter::Trace),
+        )
+        .unwrap();
+
+    // Use this to change log levels at runtime.
+    // This means you can change the default log level to trace
+    // if you are trying to debug an issue and need more logs on then turn it off
+    // once you are done.
+    let _handle = log4rs::init_config(config);
+
+    // Authenticate if needed
+    if auth {
+        // Handle the three auth flows
+        if token == true {
+            // Use the bearer token flow
+            trace!("Bearer token auth flow");
+
+            client.login_with_token(
+                Password::new("Your Bearer Token")
+                    .prompt()
+                    .expect("Error reading bearer token"),
+            );
+        } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok()
+        {
+            warn!("Found password and username enviornment variables");
+
+            let username = std::env::var("REXIT_USERNAME").unwrap();
+            let password = std::env::var("REXIT_PASSWORD").unwrap();
+            client.login(username, password).await;
+        } else {
+            // Use the username password auth flow
+            trace!("Password auth flow");
+
+            let username = Text::new("Your Reddit Username")
                 .prompt()
-                .expect("Error reading bearer token"),
-        );
-    } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok() {
-        warn!("Found password and username enviornment variables");
+                .expect("Error reading username");
 
-        let username = std::env::var("REXIT_USERNAME").unwrap();
-        let password = std::env::var("REXIT_PASSWORD").unwrap();
-        client.login(username, password).await;
-    } else {
-        // Use the username password auth flow
-        trace!("Password auth flow");
+            let password = Password::new("Your Reddit Password")
+                .without_confirmation()
+                .with_display_toggle_enabled()
+                .prompt()
+                .expect("Error reading password");
 
-        let username = Text::new("Your Reddit Username")
-            .prompt()
-            .expect("Error reading username");
-
-        let password = Password::new("Your Reddit Password")
-            .without_confirmation()
-            .with_display_toggle_enabled()
-            .prompt()
-            .expect("Error reading password");
-
-        client.login(username.to_owned(), password.to_owned()).await;
+            client.login(username.to_owned(), password.to_owned()).await;
+        }
+        info!("Login Successful");
     }
-
-    info!("Login Successful");
 
     // Handle output folder stuff
     // Deletes the output folder (we append the batches so this is necessary)
-    if args.out.exists() {
-        std::fs::remove_dir_all(&args.out).expect("Error deleting out folder");
+    if out.exists() {
+        std::fs::remove_dir_all(out.clone()).expect("Error deleting out folder");
     }
 
     // Creates out folders
-    std::fs::create_dir(&args.out).unwrap();
-    std::fs::create_dir(args.out.join("messages")).unwrap();
-    std::fs::create_dir(args.out.join("saved_posts")).unwrap();
+    std::fs::create_dir(out.clone()).unwrap();
+    std::fs::create_dir(out.join("messages")).unwrap();
+    std::fs::create_dir(out.join("saved_posts")).unwrap();
+    std::fs::create_dir(out.join("subreddit")).unwrap();
 
     // Make sure there is an images folder to output to if images is true
-    if args.images {
-        std::fs::create_dir(args.out.join("messages/images")).unwrap();
-        std::fs::create_dir(args.out.join("saved_posts/images")).unwrap();
+    if images {
+        std::fs::create_dir(out.join("messages/images")).unwrap();
+        std::fs::create_dir(out.join("saved_posts/images")).unwrap();
+        std::fs::create_dir(out.join("subreddit/images")).unwrap();
     }
 
-    // Get list of rooms
-    let rooms = ReAPI::download_rooms(&client, args.images).await;
-
-    // Gets saved posts
-    let saved_posts = ReAPI::download_saved_posts(&client, args.images);
-
-    // Export logic
-    // Exports messages to files. Add image if its set to args
-    let export_formats: Vec<&str> = args.formats.split(",").collect();
-
-    // Export chats
-    for room in rooms {
-        for format in export_formats.clone() {
-            match format {
-                "txt" => export::export_room_chats_txt(room.to_owned(), &args.out),
-                "json" => export::export_room_chats_json(room.to_owned(), &args.out),
-                "csv" => export::export_room_chats_csv(room.to_owned(), &args.out),
-                _ => println!("Not valid Format"),
-            }
-        }
-    }
-
-    let saved_posts = saved_posts.await;
-
-    // Export Saved posts
-    export_saved_posts(saved_posts, export_formats, &args.out);
+    return client;
 }

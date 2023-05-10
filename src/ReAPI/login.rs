@@ -1,5 +1,6 @@
 use console::style;
 use regex::Regex;
+use log::{debug};
 
 impl super::Client {
     pub fn logged_in(&self) -> bool {
@@ -108,7 +109,6 @@ impl super::Client {
         for i in bearer_regex.captures_iter(&response.text().await.unwrap()) {
             for i in i.get(1).iter() {
                 bearer_token = String::from(i.as_str().clone());
-                debug!("Bearer Token: {}", bearer_token.trim());
             }
         }
 
@@ -117,7 +117,7 @@ impl super::Client {
         "{{\"type\":\"com.reddit.token\",\"token\":\"{bearer_token}\",\"initial_device_display_name\":\"Reddit Web Client\"}}"
         );
 
-        debug!("Matrix request body: {:#?}", data);
+        debug!("Matrix request body: {:?}", data);
 
         let response = self.reqwest_client
         .post("https://matrix.redditspace.com/_matrix/client/r0/login")

@@ -4,6 +4,7 @@ use console::style;
 use serde::Serialize;
 use std::path::PathBuf;
 use url::Url;
+use log::{error, info};
 
 #[derive(std::hash::Hash, Clone, Debug, Serialize)]
 pub struct Image {

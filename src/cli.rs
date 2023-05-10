@@ -7,26 +7,79 @@ pub use clap::{Args, Parser, Subcommand};
 /// CLI argument parser, see the Cli struct for the possible arguments
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-
-/// Struct that contains the possible args
+#[command(propagate_version = true)]
 pub struct Cli {
-    /// The formats to export to. Options: csv,json,txt
-    #[arg(short, long)]
-    pub formats: String,
+    // Command Line Options structure
+    #[command(subcommand)]
+    pub command: Commands,
+}
 
-    /// To use the bearer token flow, instead of username and password
-    #[arg(short, long)]
-    pub token: bool,
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    Messages {
+        /// The formats to export to. Options: csv,json,txt
+        #[arg(short, long, default_value = "txt,json,csv")]
+        formats: String,
 
-    /// Allow debugging of Rexit
-    #[arg(long)]
-    pub debug: bool,
+        /// To use the bearer token flow, instead of username and password
+        #[arg(short, long)]
+        token: bool,
 
-    /// Output images too (outputs to images folder)
-    #[arg(short, long)]
-    pub images: bool,
+        /// Output images too (outputs to images folder)
+        #[arg(short, long)]
+        images: bool,
 
-    /// What folder to output to
-    #[arg(short, long, default_value = "./out")]
-    pub out: PathBuf,
+        /// What folder to output to
+        #[arg(short, long, default_value = "./out")]
+        out: PathBuf,
+
+        // Trust proxy certificates
+        #[arg(short, long)]
+        debug: bool
+    },
+    Saved {
+        /// The formats to export to. Options: csv,json,txt
+        #[arg(short, long, default_value = "txt,json,csv")]
+        formats: String,
+
+        /// To use the bearer token flow, instead of username and password
+        #[arg(short, long)]
+        token: bool,
+
+        /// Output images too (outputs to images folder)
+        #[arg(short, long)]
+        images: bool,
+
+        /// What folder to output to
+        #[arg(short, long, default_value = "./out")]
+        out: PathBuf,
+
+        // Trust proxy certificates
+        #[arg(short, long)]
+        debug: bool
+    },
+    Subreddit {
+        /// Name of the subreddit (Example: r/redditdev)
+        name: String,
+
+        /// The formats to export to. Options: csv,json,txt
+        #[arg(short, long, default_value = "txt,json,csv")]
+        formats: String,
+
+        /// To use the bearer token flow, instead of username and password
+        #[arg(short, long)]
+        token: bool,
+
+        /// Output images too (outputs to images folder)
+        #[arg(short, long)]
+        images: bool,
+
+        /// What folder to output to
+        #[arg(short, long, default_value = "./out")]
+        out: PathBuf,
+
+        // Trust proxy certificates
+        #[arg(short, long)]
+        debug: bool
+    },
 }

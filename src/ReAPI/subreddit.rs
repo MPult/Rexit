@@ -1,15 +1,15 @@
+use super::{images, Client};
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use log::{info};
-use super::{images, Client};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedList {
-    posts: Vec<SavedPost>,
+    posts: Vec<Post>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SavedPost {
+pub struct Post {
     pub title: String,
     pub subreddit_name: String,
     pub permalink: String,
@@ -17,14 +17,18 @@ pub struct SavedPost {
     pub body_text: String,
 }
 
-pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<SavedPost> {
-    info!("Getting Saved Posts");
+pub async fn download_subreddit(
+    client: &Client,
+    subreddit_name: String,
+    image_download: bool,
+) -> Vec<Post> {
+    info!("Getting subreddit");
 
     let mut after_token = String::new();
-    let mut saved_list: Vec<SavedPost> = Vec::<SavedPost>::new();
+    let mut saved_list: Vec<Post> = Vec::<Post>::new();
 
     loop {
-        let url = format!("https://www.reddit.com/saved.json?after={after_token}");
+        let url = format!("https://www.reddit.com/{subreddit_name}.json?after={after_token}");
 
         let response = client
             .reqwest_client
@@ -56,7 +60,7 @@ pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<
                         images::get_image(
                             &client,
                             url.to_string(),
-                            &std::path::PathBuf::from("./out/saved_posts/images"),
+                            &std::path::PathBuf::from("./out/subreddit/images"),
                         )
                         .await;
                     }
@@ -67,7 +71,7 @@ pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<
 
             // Link posts require extra massaging to make work
             if !post["data"]["link_title"].is_null() {
-                let post = SavedPost {
+                let post = Post {
                     title: post["data"]["link_title"].as_str().unwrap().to_string(),
                     subreddit_name: post["data"]["subreddit_name_prefixed"]
                         .as_str()
@@ -81,7 +85,7 @@ pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<
                 saved_list.push(post);
             } else {
                 // Normal text post
-                let post = SavedPost {
+                let post = Post {
                     title: post["data"]["title"].as_str().unwrap().to_string(),
                     subreddit_name: post["data"]["subreddit_name_prefixed"]
                         .as_str()

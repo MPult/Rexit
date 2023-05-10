@@ -32,11 +32,27 @@ Options:
 
 Currently, you need to specify the formats, and it will ask for the username and password (or bearer token with that auth flow).
 
+To get messages:
 ```bash
-$ rexit --formats csv,json,txt --images
+$ rexit messages --images
 > Your Reddit Username: <USERNAME>
 > Your Reddit Password: <PASSWORD>
 ```
+
+To get saved posts:
+```bash
+$ rexit saved --images
+> Your Reddit Username: <USERNAME>
+> Your Reddit Password: <PASSWORD>
+```
+
+To download a Subreddit:
+```bash
+$ rexit subreddit r/redditDev --images
+> Your Reddit Username: <USERNAME>
+> Your Reddit Password: <PASSWORD>
+```
+
 It will save the files to the current directory. For CSV and TXT it is split by room. If an image (.jpg, .gif, .png, etc.) was sent the filename will be displayed as the message content, along with the prefix `FILE`. 
 
 ## Installation

@@ -1,6 +1,7 @@
 use super::Client;
 use serde::Serialize;
 use serde_json::Value;
+use log::{info};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Room {
