@@ -48,6 +48,12 @@ async fn main() {
         // Initialize
         client = init(debug, token, images, out.clone(), true).await;
 
+        // Creates out folder
+        if !out.join("messages").exists() {
+            std::fs::create_dir(out.join("messages").clone()).unwrap();
+            std::fs::create_dir(out.join("messages/images").clone()).unwrap();
+        }
+
         // Get list of rooms
         let rooms = ReAPI::download_rooms(&client, images).await;
 
@@ -76,6 +82,12 @@ async fn main() {
         // Initialize
         client = init(debug, token, images, out.clone(), true).await;
 
+        // Creates out folder
+        if !out.join("saved_posts").exists() {
+            std::fs::create_dir(out.join("saved_posts").clone()).unwrap();
+            std::fs::create_dir(out.join("saved_posts/images").clone()).unwrap();
+        }
+
         // Gets saved posts
         let saved_posts = ReAPI::download_saved_posts(&client, images);
 
@@ -98,6 +110,11 @@ async fn main() {
         // Initialize
         client = init(debug, token, images, out.clone(), false).await;
 
+        // Creates out folder
+        if !out.join("subreddit").exists() {
+            std::fs::create_dir(out.join("subreddit").clone()).unwrap();
+            std::fs::create_dir(out.join("subreddit/images").clone()).unwrap();
+        }
         // Gets saved posts
         let subreddit = ReAPI::download_subreddit(&client, name, images);
 
@@ -207,22 +224,8 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) 
     }
 
     // Handle output folder stuff
-    // Deletes the output folder (we append the batches so this is necessary)
-    if out.exists() {
-        std::fs::remove_dir_all(out.clone()).expect("Error deleting out folder");
-    }
-
-    // Creates out folders
-    std::fs::create_dir(out.clone()).unwrap();
-    std::fs::create_dir(out.join("messages")).unwrap();
-    std::fs::create_dir(out.join("saved_posts")).unwrap();
-    std::fs::create_dir(out.join("subreddit")).unwrap();
-
-    // Make sure there is an images folder to output to if images is true
-    if images {
-        std::fs::create_dir(out.join("messages/images")).unwrap();
-        std::fs::create_dir(out.join("saved_posts/images")).unwrap();
-        std::fs::create_dir(out.join("subreddit/images")).unwrap();
+    if !out.exists() {
+        std::fs::create_dir(out.clone()).unwrap();
     }
 
     return client;
