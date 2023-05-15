@@ -32,7 +32,6 @@ jobs:
           git push --tags
       - name: cargo publish
         run: |
-          cargo login
           cargo publish
 
   publish:
@@ -46,7 +45,7 @@ jobs:
           - name: linux
             os: ubuntu-latest
             artifact_name: target/release/rexit
-            asset_name: test-linux
+            asset_name: rexit-linux
           - name: windows
             os: windows-latest
             artifact_name: target/release/rexit.exe
