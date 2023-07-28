@@ -1,7 +1,7 @@
 use super::{images, Client};
 use chrono::{TimeZone, Utc};
+use log::debug;
 use serde::{Deserialize, Serialize};
-use log::{debug};
 
 /// Struct for a singular message.
 #[derive(Debug, Clone, Serialize)]
@@ -47,7 +47,12 @@ struct InternalImageInfo {
     mimetype: String,
 }
 
-pub async fn list_messages(client: &Client, id: String, image_download: bool) -> Vec<Message> {
+pub async fn list_messages(
+    client: &Client,
+    id: String,
+    image_download: bool,
+    no_usernames: bool,
+) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
     let mut batch: String = String::new();
     // Loop over the batching
@@ -73,10 +78,20 @@ pub async fn list_messages(client: &Client, id: String, image_download: bool) ->
         // Iterate over messages
         for message in messages.chunk {
             // Detect if message is text or file
+
+            // Handle the no-usernames CLI flag
+            let author: String;
+
+            if no_usernames {
+                author = "N/A".to_owned();
+            } else {
+                author = super::get_user(client, message.sender).await.displayname;
+            }
+
             if message.content.url.is_some() {
                 // Is a file
                 output.push(Message {
-                    author: super::get_user(client, message.sender).await.displayname,
+                    author: author,
                     timestamp: unix_millis_to_utc(message.timestamp),
                     content: Content::Message(message.content.body.clone().unwrap()),
                 });
@@ -92,7 +107,7 @@ pub async fn list_messages(client: &Client, id: String, image_download: bool) ->
             } else if message.content.body.is_some() {
                 // Text Message
                 output.push(Message {
-                    author: super::get_user(client, message.sender).await.displayname,
+                    author: author,
                     timestamp: unix_millis_to_utc(message.timestamp),
                     content: Content::Message(message.content.body.unwrap()),
                 })
@@ -130,7 +145,7 @@ mod tests {
 
         let rooms = super::super::download_rooms(&client, true);
 
-        let _messages = super::list_messages(&client, rooms.await[1].clone().id, true).await;
+        let _messages = super::list_messages(&client, rooms.await[1].clone().id, true, false).await;
     }
 
     fn get_login() -> (String, String) {

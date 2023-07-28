@@ -33,9 +33,13 @@ pub enum Commands {
         #[arg(short, long, default_value = "./out")]
         out: PathBuf,
 
-        // Trust proxy certificates
+        /// Trust proxy certificates
         #[arg(short, long)]
-        debug: bool
+        debug: bool,
+
+        /// Not Retrieve usernames (Is a lot faster)
+        #[arg(long)]
+        noUsernames: bool
     },
     Saved {
         /// The formats to export to. Options: csv,json,txt
@@ -56,7 +60,11 @@ pub enum Commands {
 
         // Trust proxy certificates
         #[arg(short, long)]
-        debug: bool
+        debug: bool,
+
+        /// Not Retrieve usernames (Is a lot faster)
+        #[arg(long)]
+        noUsernames: bool
     },
     Subreddit {
         /// Name of the subreddit (Example: r/redditdev)
@@ -80,6 +88,10 @@ pub enum Commands {
 
         // Trust proxy certificates
         #[arg(short, long)]
-        debug: bool
+        debug: bool,
+
+        /// Not Retrieve usernames (Is a lot faster)
+        #[arg(long)]
+        noUsernames: bool
     },
 }

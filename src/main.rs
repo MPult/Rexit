@@ -43,6 +43,7 @@ async fn main() {
         images,
         out,
         debug,
+        noUsernames
     } = args.command
     {
         // Initialize
@@ -55,7 +56,7 @@ async fn main() {
         }
 
         // Get list of rooms
-        let rooms = ReAPI::download_rooms(&client, images).await;
+        let rooms = ReAPI::download_rooms(&client, images, noUsernames).await;
 
         // Exports messages to files.
         let export_formats: Vec<&str> = formats.split(",").collect();
@@ -77,6 +78,7 @@ async fn main() {
         images,
         out,
         debug,
+        noUsernames
     } = args.command
     {
         // Initialize
@@ -105,6 +107,7 @@ async fn main() {
         images,
         out,
         debug,
+        noUsernames
     } = args.command
     {
         // Initialize
