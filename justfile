@@ -4,10 +4,10 @@ set dotenv-load := true
 default: test
 
 messages:
-  cargo run -- messages -f txt,json,csv --images
+  cargo run -- messages -f txt,json,csv --images --no-usernames
 
 messages-dbg:
-  cargo run -- messages -f txt,json,csv --images --debug
+  cargo run -- messages -f json --debug --images --no-usernames
 
 subreddit:
   cargo run -- subreddit -n r/rexitTest -f txt,json,csv --images

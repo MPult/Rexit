@@ -28,6 +28,7 @@ Options:
   -o, --out <OUT>          What folder to output to [default: ./out]
   -h, --help               Print help
   -V, --version            Print version
+      --no-usernames       Not Retrieve usernames (Is a lot faster)
 ```
 
 ## Usage

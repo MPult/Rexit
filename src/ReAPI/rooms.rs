@@ -10,10 +10,10 @@ pub struct Room {
 }
 
 impl Room {
-    async fn download(id: String, client: &Client, image_download: bool) -> Room {
+    async fn download(id: String, client: &Client, image_download: bool, no_usernames: bool) -> Room {
         Room {
             id: id.clone(),
-            messages: download_messages(&client, id.clone(), image_download).await,
+            messages: download_messages(&client, id.clone(), image_download, no_usernames).await,
         }
     }
 
@@ -26,12 +26,13 @@ async fn download_messages(
     client: &Client,
     id: String,
     image_download: bool,
+    no_usernames: bool
 ) -> Option<Vec<super::Message>> {
-    Some(super::messages::list_messages(client, id, image_download).await)
+    Some(super::messages::list_messages(client, id, image_download, no_usernames).await)
 }
 
 /// Returns list of all rooms that the user is joined to as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3directorylistroomroomid)
-pub async fn download_rooms(client: &Client, image_download: bool) -> Vec<Room> {
+pub async fn download_rooms(client: &Client, image_download: bool, no_usernames: bool) -> Vec<Room> {
     let resp = client
         .reqwest_client
         .get("https://matrix.redditspace.com/_matrix/client/v3/joined_rooms")
@@ -52,7 +53,7 @@ pub async fn download_rooms(client: &Client, image_download: bool) -> Vec<Room> 
 
     // Move rooms into a Vec<Room>
     let rooms = rooms.iter().map(move |room| {
-        Room::download(room.to_string().replace("\"", ""), client, image_download)
+        Room::download(room.to_string().replace("\"", ""), client, image_download, no_usernames)
     });
 
     let mut rooms_2: Vec<Room> = vec![];
@@ -75,7 +76,7 @@ mod tests {
 
         client.login(username, password).await;
 
-        let rooms = super::download_rooms(&client, true);
+        let rooms = super::download_rooms(&client, true, false);
 
         println!("{:?}", rooms.await);
     }
