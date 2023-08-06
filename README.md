@@ -94,6 +94,18 @@ To access these:
 $ cargo doc --open
 ```
 
+## Common Errors
+**Q:** Some images are not downloading, the console says `Image was already downloaded`; Skipping``.
+
+**A:** Delete the `imageLog.txt` file from the out folder.
+
+---
 In general all contributions are welcome. I would appreciate if you'd create an issue beforehand, in order for me to plan things out nicely.
+
+
+**Note To Reddit:** Care was taken to ensure as little API requests are made as possible.
+- Username requests are cached locally, and an option is provided to not gather the usernames
+- A log of already downloaded images is kept to prevent downloading images multiple times
+
 ## License
 [GNU General Public License, Version 3](./LICENSE)

@@ -36,10 +36,17 @@ impl Image {
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
 pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::path::Path) {
-    info!(target: "get_image", "Getting image: {}...", &url[0..30]);
     let mut url = url;
     let mut id: Option<String> = None;
-
+    
+    
+    if image_log::check_image_log(out.clone(), url.clone()) {
+        // Image was already downloaded
+        info!("Image was already downloaded; Skipping");
+        return;
+    }
+    
+    info!(target: "get_image", "Getting image: {}...", &url[0..30]);
     image_log::write_image_log(out, url.clone());
 
 
