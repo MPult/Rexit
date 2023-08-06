@@ -1,6 +1,8 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use log::{info};
+use log::info;
 use super::{images, Client};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,7 +19,7 @@ pub struct SavedPost {
     pub body_text: String,
 }
 
-pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<SavedPost> {
+pub async fn download_saved_posts(client: &Client, image_download: bool, out: PathBuf) -> Vec<SavedPost> {
     info!("Getting Saved Posts");
 
     let mut after_token = String::new();
@@ -56,6 +58,7 @@ pub async fn download_saved_posts(client: &Client, image_download: bool) -> Vec<
                         images::get_image(
                             &client,
                             url.to_string(),
+                            out.clone(),
                             &std::path::PathBuf::from("./out/saved_posts/images"),
                         )
                         .await;
