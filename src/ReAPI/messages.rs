@@ -93,7 +93,7 @@ pub async fn list_messages(
                 output.push(Message {
                     author: author,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Message(message.content.body.clone().unwrap()),
+                    content: Content::Message(message.content.url.clone().unwrap()),
                 });
                 // If option is set download the image
                 if image_download {

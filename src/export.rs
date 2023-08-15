@@ -23,7 +23,7 @@ pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
             );
 
             output_buffer.push_str(line.as_str());
-        }
+        } 
     }
 
     std::fs::write(path, output_buffer).unwrap();
