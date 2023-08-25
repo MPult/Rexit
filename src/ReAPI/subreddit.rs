@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::{images, Client};
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -21,6 +23,7 @@ pub async fn download_subreddit(
     client: &Client,
     subreddit_name: String,
     image_download: bool,
+    out: PathBuf,
 ) -> Vec<Post> {
     info!("Getting subreddit");
 
@@ -60,6 +63,7 @@ pub async fn download_subreddit(
                         images::get_image(
                             &client,
                             url.to_string(),
+                            out.clone(),
                             &std::path::PathBuf::from("./out/subreddit/images"),
                         )
                         .await;

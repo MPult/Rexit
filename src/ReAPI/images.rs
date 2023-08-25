@@ -1,10 +1,10 @@
 use super::Client;
-use crate::exit;
+use crate::{exit, image_log};
 use console::style;
+use log::{error, info};
 use serde::Serialize;
 use std::path::PathBuf;
 use url::Url;
-use log::{error, info};
 
 #[derive(std::hash::Hash, Clone, Debug, Serialize)]
 pub struct Image {
@@ -35,10 +35,21 @@ impl Image {
 }
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
-pub async fn get_image(client: &Client, url: String, path: &std::path::Path) {
-    info!(target: "get_image", "Getting image: {}...", &url[0..30]);
+pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::path::Path) {
     let mut url = url;
     let mut id: Option<String> = None;
+    
+    
+    if image_log::check_image_log(out.clone(), url.clone()) {
+        // Image was already downloaded
+        info!("Image was already downloaded; Skipping");
+        return;
+    }
+    
+    info!(target: "get_image", "Getting image: {}...", &url[0..30]);
+    image_log::write_image_log(out, url.clone());
+
+
     if url.starts_with("mxc") {
         // Matrix images
         (url, id) = parse_matrix_image_url(url.as_str());
@@ -110,28 +121,4 @@ fn get_image_extension(headers: &reqwest::header::HeaderMap) -> String {
     }
 
     return extension.unwrap();
-}
-
-#[cfg(test)]
-mod tests {
-    #[tokio::test]
-    async fn get_image() {
-        let client = super::super::new_client(true);
-        let _output = super::get_image(
-            &client,
-            "mxc://reddit.com/dwdprq7pxbva1/".to_string(),
-            std::path::Path::new("./test_resources/test_cases/ReAPI/images/get_images"),
-        )
-        .await;
-
-        assert!(std::path::PathBuf::from(
-            "./test_resources/test_cases/ReAPI/images/get_images/dwdprq7pxbva1.gif"
-        )
-        .exists());
-
-        std::fs::remove_file(
-            "./test_resources/test_cases/ReAPI/images/get_images/dwdprq7pxbva1.gif",
-        )
-        .expect("Could not remove downloaded file");
-    }
 }

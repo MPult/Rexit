@@ -1,6 +1,6 @@
 use super::Client;
 use cached::SizedCache;
-use log::{debug};
+use log::debug;
 
 #[derive(Clone, Debug)]
 pub struct User {

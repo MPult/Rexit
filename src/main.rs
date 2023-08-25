@@ -25,6 +25,7 @@ mod ReAPI;
 mod cli;
 mod export;
 mod macros;
+mod image_log;
 
 use cli::{Cli, Parser};
 
@@ -43,7 +44,7 @@ async fn main() {
         images,
         out,
         debug,
-        noUsernames
+        noUsernames,
     } = args.command
     {
         // Initialize
@@ -56,7 +57,7 @@ async fn main() {
         }
 
         // Get list of rooms
-        let rooms = ReAPI::download_rooms(&client, images, noUsernames).await;
+        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone()).await;
 
         // Exports messages to files.
         let export_formats: Vec<&str> = formats.split(",").collect();
@@ -78,7 +79,7 @@ async fn main() {
         images,
         out,
         debug,
-        noUsernames
+        noUsernames,
     } = args.command
     {
         // Initialize
@@ -91,7 +92,7 @@ async fn main() {
         }
 
         // Gets saved posts
-        let saved_posts = ReAPI::download_saved_posts(&client, images);
+        let saved_posts = ReAPI::download_saved_posts(&client, images, out.clone());
 
         let saved_posts = saved_posts.await;
 
@@ -107,7 +108,7 @@ async fn main() {
         images,
         out,
         debug,
-        noUsernames
+        noUsernames,
     } = args.command
     {
         // Initialize
@@ -119,7 +120,7 @@ async fn main() {
             std::fs::create_dir(out.join("subreddit/images").clone()).unwrap();
         }
         // Gets saved posts
-        let subreddit = ReAPI::download_subreddit(&client, name, images);
+        let subreddit = ReAPI::download_subreddit(&client, name, images, out.clone());
 
         let subreddit = subreddit.await;
 
@@ -230,6 +231,9 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) 
     if !out.exists() {
         std::fs::create_dir(out.clone()).unwrap();
     }
+
+    // Initialize the image log
+    image_log::init(out.clone());
 
     return client;
 }

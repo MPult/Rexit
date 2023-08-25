@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::{images, Client};
 use chrono::{TimeZone, Utc};
 use log::debug;
@@ -52,6 +54,7 @@ pub async fn list_messages(
     id: String,
     image_download: bool,
     no_usernames: bool,
+    out: PathBuf
 ) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
     let mut batch: String = String::new();
@@ -100,6 +103,7 @@ pub async fn list_messages(
                     images::get_image(
                         &client,
                         message.content.url.unwrap(),
+                        out.clone(),
                         &std::path::PathBuf::from("./out/messages/images"),
                     )
                     .await;
@@ -132,6 +136,8 @@ fn unix_millis_to_utc(unix_time: i64) -> chrono::DateTime<Utc> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::super::new_client;
 
     #[tokio::test]
@@ -143,9 +149,9 @@ mod tests {
 
         client.login(username, password).await;
 
-        let rooms = super::super::download_rooms(&client, true);
+        let rooms = super::super::download_rooms(&client, true, false, PathBuf::from("./out"));
 
-        let _messages = super::list_messages(&client, rooms.await[1].clone().id, true, false).await;
+        let _messages = super::list_messages(&client, rooms.await[1].clone().id, true, false, PathBuf::from("./out")).await;
     }
 
     fn get_login() -> (String, String) {
