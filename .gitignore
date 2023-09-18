@@ -14,3 +14,5 @@
 /out
 /out1
 *.log
+
+.DS_Store
