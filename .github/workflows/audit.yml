@@ -9,13 +9,13 @@ on:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
   pull_request:
-{% raw  %}
+
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
       # Ensure that the latest version of Cargo is installed
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -23,4 +23,3 @@ jobs:
       - uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-{% endraw  %}
