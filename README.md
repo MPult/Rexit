@@ -2,8 +2,6 @@
 
 # Rexit
 
-**Development of Rexit is on hold, pending Reddits API shenanigans.**
-
 Rexit - Liberate your Reddit Chats. This tool will export your Reddit chats into a plethora of formats
 
 ![version](https://img.shields.io/github/v/tag/mpult/rexit?color=orange)
