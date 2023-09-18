@@ -7,7 +7,7 @@ readme = "README.md"
 license = "GPL-3.0"
 
 [dependencies]
-cached = "0.45.*"
+cached = "0.43.*"
 chrono = { version = "0.4.*", features = ["serde"] }
 clap = { version = "4.3.*", features = ["derive"] }
 console = { version = "0.15.*", features = ["windows-console-colors"] }
