@@ -75,6 +75,9 @@ pub async fn list_messages(
         // Deserialize response
         let messages: Result<InternalMessages, serde_json::Error> =
             serde_json::from_str(response.text().await.unwrap().as_str());
+        if messages.is_err() {
+            continue; // steamroll
+        }
         let messages = messages.unwrap();
         output.reserve(messages.chunk.len());
 
