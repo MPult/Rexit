@@ -1,6 +1,6 @@
 use console::style;
+use log::debug;
 use regex::Regex;
-use log::{debug};
 
 impl super::Client {
     pub fn logged_in(&self) -> bool {

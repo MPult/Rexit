@@ -2,7 +2,6 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
-
 use crate::ReAPI;
 
 /// Export the chats into a .txt file
@@ -23,7 +22,7 @@ pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
             );
 
             output_buffer.push_str(line.as_str());
-        } 
+        }
     }
 
     std::fs::write(path, output_buffer).unwrap();
@@ -75,7 +74,11 @@ pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
 }
 
 /// Export saved posts
-pub fn export_saved_posts(post_array: Vec<ReAPI::saved_posts::SavedPost>, formats: Vec<&str>, out_folder: &Path) {
+pub fn export_saved_posts(
+    post_array: Vec<ReAPI::saved_posts::SavedPost>,
+    formats: Vec<&str>,
+    out_folder: &Path,
+) {
     // Export to JSON
     if formats.contains(&"json") {
         let path = out_folder.join("saved_posts/saved_posts.json");
@@ -121,7 +124,11 @@ pub fn export_saved_posts(post_array: Vec<ReAPI::saved_posts::SavedPost>, format
 }
 
 /// Export subreddit
-pub fn export_subreddit(post_array: Vec<ReAPI::subreddit::Post>, formats: Vec<&str>, out_folder: &Path) {
+pub fn export_subreddit(
+    post_array: Vec<ReAPI::subreddit::Post>,
+    formats: Vec<&str>,
+    out_folder: &Path,
+) {
     // Export to JSON
     if formats.contains(&"json") {
         let path = out_folder.join("subreddit/subreddit.json");
