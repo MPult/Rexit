@@ -7,7 +7,7 @@ Rexit - Liberate your Reddit Chats. This tool will export your Reddit chats into
 ![version](https://img.shields.io/github/v/tag/mpult/rexit?color=orange)
 ![license](https://img.shields.io/github/license/mpult/rexit?color=blue)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mpult/rexit?color=red)
-![Ubuntu-latest](https://github.com/MPult/Rexit/actions/workflows/Ubuntu-latest.yml/badge.svg)](https://github.com/MPult/Rexit/actions/workflows/Ubuntu-latest.yml)
+[![.github/workflows/cd.yml](https://github.com/MPult/Rexit/actions/workflows/cd.yml/badge.svg)](https://github.com/MPult/Rexit/actions/workflows/cd.yml)
 
 </div>
 
