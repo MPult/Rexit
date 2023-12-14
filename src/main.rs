@@ -45,6 +45,7 @@ async fn main() {
         out,
         debug,
         noUsernames,
+        redact,
     } = args.command
     {
         // Initialize
@@ -57,7 +58,7 @@ async fn main() {
         }
 
         // Get list of rooms
-        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone()).await;
+        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone(), redact).await;
 
         // Exports messages to files.
         let export_formats: Vec<&str> = formats.split(",").collect();
@@ -80,6 +81,7 @@ async fn main() {
         out,
         debug,
         noUsernames,
+        redact,
     } = args.command
     {
         // Initialize
@@ -92,7 +94,7 @@ async fn main() {
         }
 
         // Gets saved posts
-        let saved_posts = ReAPI::download_saved_posts(&client, images, out.clone());
+        let saved_posts = ReAPI::download_saved_posts(&client, images, out.clone(), redact);
 
         let saved_posts = saved_posts.await;
 
@@ -109,6 +111,7 @@ async fn main() {
         out,
         debug,
         noUsernames,
+        redact,
     } = args.command
     {
         // Initialize
@@ -120,7 +123,7 @@ async fn main() {
             std::fs::create_dir(out.join("subreddit/images").clone()).unwrap();
         }
         // Gets saved posts
-        let subreddit = ReAPI::download_subreddit(&client, name, images, out.clone());
+        let subreddit = ReAPI::download_subreddit(&client, name, images, out.clone(), redact);
 
         let subreddit = subreddit.await;
 

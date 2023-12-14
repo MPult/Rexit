@@ -19,7 +19,7 @@ pub struct SavedPost {
     pub body_text: String,
 }
 
-pub async fn download_saved_posts(client: &Client, image_download: bool, out: PathBuf) -> Vec<SavedPost> {
+pub async fn download_saved_posts(client: &Client, image_download: bool, out: PathBuf, redact: bool) -> Vec<SavedPost> {
     info!("Getting Saved Posts");
 
     let mut after_token = String::new();
@@ -60,6 +60,7 @@ pub async fn download_saved_posts(client: &Client, image_download: bool, out: Pa
                             url.to_string(),
                             out.clone(),
                             &std::path::PathBuf::from("./out/saved_posts/images"),
+                            redact,
                         )
                         .await;
                     }

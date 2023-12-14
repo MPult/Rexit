@@ -39,7 +39,11 @@ pub enum Commands {
 
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
-        noUsernames: bool
+        noUsernames: bool,
+
+        /// Redact
+        #[arg(long)]
+        redact: bool
     },
     Saved {
         /// The formats to export to. Options: csv,json,txt
@@ -64,7 +68,11 @@ pub enum Commands {
 
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
-        noUsernames: bool
+        noUsernames: bool,
+
+        /// Redact
+        #[arg(long)]
+        redact: bool
     },
     Subreddit {
         /// Name of the subreddit (Example: r/redditdev)
@@ -92,6 +100,10 @@ pub enum Commands {
 
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
-        noUsernames: bool
+        noUsernames: bool,
+
+        /// Redact
+        #[arg(long)]
+        redact: bool
     },
 }

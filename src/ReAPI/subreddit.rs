@@ -24,6 +24,7 @@ pub async fn download_subreddit(
     subreddit_name: String,
     image_download: bool,
     out: PathBuf,
+    redact: bool,
 ) -> Vec<Post> {
     info!("Getting subreddit");
 
@@ -65,6 +66,7 @@ pub async fn download_subreddit(
                             url.to_string(),
                             out.clone(),
                             &std::path::PathBuf::from("./out/subreddit/images"),
+                            redact,
                         )
                         .await;
                     }
