@@ -49,7 +49,7 @@ async fn main() {
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), true).await;
+        client = init(debug, token, images, out.clone(), true, redact).await;
 
         // Creates out folder
         if !out.join("messages").exists() {
@@ -85,7 +85,7 @@ async fn main() {
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), true).await;
+        client = init(debug, token, images, out.clone(), true, redact).await;
 
         // Creates out folder
         if !out.join("saved_posts").exists() {
@@ -115,7 +115,7 @@ async fn main() {
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), false).await;
+        client = init(debug, token, images, out.clone(), false, redact).await;
 
         // Creates out folder
         if !out.join("subreddit").exists() {
@@ -136,7 +136,7 @@ async fn main() {
 }
 
 /// Handles all the init stuff for rexit
-async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) -> Client {
+async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, redact: bool) -> Client {
     // Create a Client
     let mut client = ReAPI::new_client(debug);
 
@@ -146,6 +146,12 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
             style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
     }
+
+    if redact {
+      println!("{}\n{}", 
+          style("The --redact flag attempts to redact personal information from the log file.").red().bold(), 
+          style("This option is NOT perfect, some personal information may still be present. You have been warned.").red().bold());
+  }
 
     // Initialize logging
     let level = log::LevelFilter::Info;
