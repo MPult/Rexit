@@ -82,7 +82,7 @@ $ brew install rexit
 2. Clone the repository
 3. Run:
 ```BASH
-$ cargo install --file .
+$ cargo install --path .
 ```
 ## Contributing
 To keep the docs focused on the user experience the contributing and technical docs were implemented through cargo doc.
