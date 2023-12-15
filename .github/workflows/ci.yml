@@ -7,7 +7,6 @@ on:
   pull_request:
 
 jobs:
-
   test:
     name: Test Suite
     runs-on: ubuntu-latest
