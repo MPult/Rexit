@@ -46,7 +46,7 @@ struct InternalContent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct InternalImageInfo {
-    mimetype: String,
+    mimetype: Option<String>,
 }
 
 pub async fn list_messages(

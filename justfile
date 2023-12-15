@@ -4,7 +4,7 @@ set dotenv-load := true
 default: test
 
 messages:
-  cargo run -- messages -f txt,json,csv --images --redact
+  cargo run -- messages -f txt,json,csv --images --no-usernames
 
 messages-dbg:
   cargo run -- messages -f json --debug --images --no-usernames
