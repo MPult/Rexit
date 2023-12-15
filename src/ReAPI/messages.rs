@@ -46,7 +46,7 @@ struct InternalContent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct InternalImageInfo {
-    mimetype: String,
+    mimetype: Option<String>,
 }
 
 pub async fn list_messages(
@@ -55,6 +55,7 @@ pub async fn list_messages(
     image_download: bool,
     no_usernames: bool,
     out: PathBuf,
+    redact: bool,
 ) -> Vec<Message> {
     let mut output: Vec<Message> = vec![];
     let mut batch: String = String::new();
@@ -91,7 +92,7 @@ pub async fn list_messages(
             if no_usernames {
                 author = "N/A".to_owned();
             } else {
-                author = super::get_user(client, message.sender).await.displayname;
+                author = super::get_user(client, message.sender, redact).await.displayname;
             }
 
             if message.content.url.is_some() {
@@ -108,6 +109,7 @@ pub async fn list_messages(
                         message.content.url.unwrap(),
                         out.clone(),
                         &std::path::PathBuf::from("./out/messages/images"),
+                        redact,
                     )
                     .await;
                 }
@@ -152,16 +154,9 @@ mod tests {
 
         client.login(username, password).await;
 
-        let rooms = super::super::download_rooms(&client, true, false, PathBuf::from("./out"));
+        let rooms = super::super::download_rooms(&client, true, false, PathBuf::from("./out"), false);
 
-        let _messages = super::list_messages(
-            &client,
-            rooms.await[1].clone().id,
-            true,
-            false,
-            PathBuf::from("./out"),
-        )
-        .await;
+        let _messages = super::list_messages(&client, rooms.await[1].clone().id, true, false, PathBuf::from("./out"), false).await;
     }
 
     fn get_login() -> (String, String) {

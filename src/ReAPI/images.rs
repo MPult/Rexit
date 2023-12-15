@@ -35,7 +35,7 @@ impl Image {
 }
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
-pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::path::Path) {
+pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::path::Path, redact: bool) {
     let mut url = url;
     let mut id: Option<String> = None;
 
@@ -45,7 +45,13 @@ pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::p
         return;
     }
 
-    info!(target: "get_image", "Getting image: {}...", &url[0..30]);
+    // Handle redaction
+    if redact  {
+      info!(target: "get_image", "Getting image: [REDACTED]");
+    } else {
+      info!(target: "get_image", "Getting image: {}...", &url[0..30]);
+    }
+
     image_log::write_image_log(out, url.clone());
 
     if url.starts_with("mxc") {

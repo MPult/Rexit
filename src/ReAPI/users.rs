@@ -1,6 +1,6 @@
 use super::Client;
 use cached::SizedCache;
-use log::debug;
+use log::{debug, info};
 
 #[derive(Clone, Debug)]
 pub struct User {
@@ -13,7 +13,7 @@ pub struct User {
     create = "{ SizedCache::with_size(10_000) }",
     convert = r#"{ format!("{}", id) }"#
 )]
-pub async fn get_user(client: &Client, id: String) -> User {
+pub async fn get_user(client: &Client, id: String, redact: bool) -> User {
     let url = format!("https://matrix.redditspace.com/_matrix/client/r0/profile/{id}/displayname",);
 
     let response = client
@@ -26,7 +26,13 @@ pub async fn get_user(client: &Client, id: String) -> User {
     let value: serde_json::Value =
         serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
 
-    debug!("Found user: {}", value["displayname"].clone());
+
+    // handle redaction
+    if redact {
+      info!("Found user: [REDACTED]");
+    } else {
+      info!("Found user: {}", value["displayname"].clone());
+    }
 
     User {
         id: id,
@@ -42,7 +48,7 @@ mod tests {
         let client = super::super::new_client(true);
         let id = "@t2_9b09u6gps:reddit.com".to_string();
 
-        let result = super::get_user(&client, id);
+        let result = super::get_user(&client, id, false);
 
         assert_eq!(result.await.displayname, "rexitTest");
     }

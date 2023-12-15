@@ -45,10 +45,11 @@ async fn main() {
         out,
         debug,
         noUsernames,
+        redact,
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), true).await;
+        client = init(debug, token, images, out.clone(), true, redact).await;
 
         // Creates out folder
         if !out.join("messages").exists() {
@@ -57,7 +58,7 @@ async fn main() {
         }
 
         // Get list of rooms
-        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone()).await;
+        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone(), redact).await;
 
         // Exports messages to files.
         let export_formats: Vec<&str> = formats.split(",").collect();
@@ -80,10 +81,11 @@ async fn main() {
         out,
         debug,
         noUsernames,
+        redact,
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), true).await;
+        client = init(debug, token, images, out.clone(), true, redact).await;
 
         // Creates out folder
         if !out.join("saved_posts").exists() {
@@ -92,7 +94,7 @@ async fn main() {
         }
 
         // Gets saved posts
-        let saved_posts = ReAPI::download_saved_posts(&client, images, out.clone());
+        let saved_posts = ReAPI::download_saved_posts(&client, images, out.clone(), redact);
 
         let saved_posts = saved_posts.await;
 
@@ -109,10 +111,11 @@ async fn main() {
         out,
         debug,
         noUsernames,
+        redact,
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), false).await;
+        client = init(debug, token, images, out.clone(), false, redact).await;
 
         // Creates out folder
         if !out.join("subreddit").exists() {
@@ -120,7 +123,7 @@ async fn main() {
             std::fs::create_dir(out.join("subreddit/images").clone()).unwrap();
         }
         // Gets saved posts
-        let subreddit = ReAPI::download_subreddit(&client, name, images, out.clone());
+        let subreddit = ReAPI::download_subreddit(&client, name, images, out.clone(), redact);
 
         let subreddit = subreddit.await;
 
@@ -133,7 +136,7 @@ async fn main() {
 }
 
 /// Handles all the init stuff for rexit
-async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) -> Client {
+async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, redact: bool) -> Client {
     // Create a Client
     let mut client = ReAPI::new_client(debug);
 
@@ -143,6 +146,12 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool) 
             style("The --debug flag accepts untrusted HTTPS certificates which can be a potential security risk").red().bold(), 
             style("This option is only recommended if you know what your are doing and you want to debug Rexit").red().bold());
     }
+
+    if redact {
+      println!("{}\n{}", 
+          style("The --redact flag attempts to redact personal information from the log file.").red().bold(), 
+          style("This option is NOT perfect, some personal information may still be present. You have been warned.").red().bold());
+  }
 
     // Initialize logging
     let level = log::LevelFilter::Info;
