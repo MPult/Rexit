@@ -1,0 +1,11 @@
+{
+  "binaries": [
+    {
+      "name": "rexit",
+      "src_path": "/Users/caleb/code/rexit/src/main.rs"
+    }
+  ],
+  "examples": [],
+  "integration_tests": [],
+  "unit_tests": []
+}

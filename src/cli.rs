@@ -17,29 +17,8 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     Messages {
-        /// The formats to export to. Options: csv,json,txt
-        #[arg(short, long, default_value = "txt,json,csv")]
-        formats: String,
-
-        /// To use the bearer token flow, instead of username and password
-        #[arg(short, long)]
-        token: bool,
-
-        /// Output images too (outputs to images folder)
-        #[arg(short, long)]
-        images: bool,
-
-        /// What folder to output to
-        #[arg(short, long, default_value = "./out")]
-        out: PathBuf,
-
-        /// Trust proxy certificates
-        #[arg(short, long)]
-        debug: bool,
-
-        /// Not Retrieve usernames (Is a lot faster)
-        #[arg(long)]
-        noUsernames: bool,
+        #[clap(flatten)]
+        args: MessageArgs,
     },
     Saved {
         /// The formats to export to. Options: csv,json,txt
@@ -94,4 +73,32 @@ pub enum Commands {
         #[arg(long)]
         noUsernames: bool,
     },
+}
+
+#[derive(clap::Args, Debug, Clone)]
+#[allow(non_snake_case)]
+pub struct MessageArgs {
+    /// The formats to export to. Options: csv,json,txt
+    #[arg(short, long, default_value = "txt,json,csv")]
+    pub formats: String,
+
+    /// To use the bearer token flow, instead of username and password
+    #[arg(short, long)]
+    pub token: bool,
+
+    /// Output images too (outputs to images folder)
+    #[arg(short, long)]
+    pub images: bool,
+
+    /// What folder to output to
+    #[arg(short, long, default_value = "./out")]
+    pub out: PathBuf,
+
+    /// Trust proxy certificates
+    #[arg(short, long)]
+    pub debug: bool,
+
+    /// Not Retrieve usernames (Is a lot faster)
+    #[arg(long)]
+    pub noUsernames: bool,
 }

@@ -39,36 +39,31 @@ async fn main() {
 
     // Init the program
     if let cli::Commands::Messages {
-        formats,
-        token,
-        images,
-        out,
-        debug,
-        noUsernames,
+        args
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), true).await;
+        client = init(args.debug, args.token, args.images, args.out.clone(), true).await;
 
         // Creates out folder
-        if !out.join("messages").exists() {
-            std::fs::create_dir(out.join("messages").clone()).unwrap();
-            std::fs::create_dir(out.join("messages/images").clone()).unwrap();
+        if !args.out.join("messages").exists() {
+            std::fs::create_dir(args.out.join("messages").clone()).unwrap();
+            std::fs::create_dir(args.out.join("messages/images").clone()).unwrap();
         }
 
         // Get list of rooms
-        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone()).await;
+        let rooms = ReAPI::download_rooms(&client, args.images, args.noUsernames, args.out.clone()).await;
 
         // Exports messages to files.
-        let export_formats: Vec<&str> = formats.split(",").collect();
+        let export_formats: Vec<&str> = args.formats.split(",").collect();
 
         // Export chats
         for room in rooms {
             for format in export_formats.clone() {
                 match format {
-                    "txt" => export::export_room_chats_txt(room.to_owned(), &out),
-                    "json" => export::export_room_chats_json(room.to_owned(), &out),
-                    "csv" => export::export_room_chats_csv(room.to_owned(), &out),
+                    "txt" => export::export_room_chats_txt(room.to_owned(), &args.out),
+                    "json" => export::export_room_chats_json(room.to_owned(), &args.out),
+                    "csv" => export::export_room_chats_csv(room.to_owned(), &args.out),
                     _ => println!("Not valid Format"),
                 }
             }
