@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
 use super::Client;
+use log::info;
 use serde::Serialize;
 use serde_json::Value;
-use log::info;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Room {

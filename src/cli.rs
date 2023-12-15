@@ -69,7 +69,7 @@ pub enum Commands {
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
         noUsernames: bool,
-
+      
         /// Redact
         #[arg(long)]
         redact: bool

@@ -24,8 +24,8 @@ use ReAPI::Client;
 mod ReAPI;
 mod cli;
 mod export;
-mod macros;
 mod image_log;
+mod macros;
 
 use cli::{Cli, Parser};
 

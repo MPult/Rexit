@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
+use super::{images, Client};
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use log::info;
-use super::{images, Client};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedList {
