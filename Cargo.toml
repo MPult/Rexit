@@ -9,7 +9,7 @@ license = "GPL-3.0"
 [dependencies]
 cached = "0.43.*"
 chrono = { version = "0.4.*", features = ["serde"] }
-clap = { version = "4.3.*", features = ["derive"] }
+clap = { version = "4.4.*", features = ["derive"] }
 console = { version = "0.15.*", features = ["windows-console-colors"] }
 html-escape = "0.2.13"
 inquire = "0.6.*"
