@@ -4,7 +4,7 @@
 // extern crate pretty_env_logger;
 // #[macro_use]
 // extern crate log;
-use log::{info, trace, warn};
+use log::{info, trace, warn, error};
 // use log4rs;
 
 use log::LevelFilter;
@@ -206,13 +206,15 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
             trace!("Bearer token auth flow");
 
             client.login_with_token(
-                Password::new("Your Bearer Token")
+                Password::new("Your Bearer Token from Matrix; see docs")
                     .prompt()
                     .expect("Error reading bearer token"),
             );
+
         } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok()
         {
             warn!("Found password and username enviornment variables");
+            error!("Username and Password flow is currently not supported; see https://github.com/mpult/rexit");
 
             let username = std::env::var("REXIT_USERNAME").unwrap();
             let password = std::env::var("REXIT_PASSWORD").unwrap();
@@ -220,6 +222,7 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
         } else {
             // Use the username password auth flow
             trace!("Password auth flow");
+            error!("Username and Password flow is currently not supported; see https://github.com/mpult/rexit");
 
             let username = Text::new("Your Reddit Username")
                 .prompt()

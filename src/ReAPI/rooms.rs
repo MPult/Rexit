@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use super::Client;
-use log::info;
+use log::{info, trace, warn, debug};
 use serde::Serialize;
 use serde_json::Value;
 
@@ -45,9 +45,12 @@ pub async fn download_rooms(client: &Client, image_download: bool, no_usernames:
         .await
         .expect("Failed to send HTTP request; to obtain rooms");
 
-    // Parse json
-    let json: Value =
-        serde_json::from_str(&resp.text().await.unwrap()).expect("Error parsing Rooms list JSON");
+      
+      // Parse json
+      let json: Value =
+      serde_json::from_str(&resp.text().await.unwrap()).expect("Error parsing Rooms list JSON");
+      
+      debug!("downloadRoomsResponse: {:?}", json);
 
     // Read rooms from json
     let rooms = json["joined_rooms"]

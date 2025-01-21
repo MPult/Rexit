@@ -1,6 +1,7 @@
 use console::style;
-use log::debug;
+use log::{debug, warn};
 use regex::Regex;
+use reqwest::Client;
 
 impl super::Client {
     pub fn logged_in(&self) -> bool {
@@ -43,28 +44,36 @@ impl super::Client {
             .await
             .expect("Failed to send HTTP request; to obtain CSRF token");
 
-        debug!("CSRF Request Response: {:?}", resp);
-        let body = resp.text();
-        let body = body.await.expect("Failed to read response body");
+        debug!("CSRF Request Response headers: {:?}", resp.headers());
+        // let body = resp.text();
+        let headers = resp.headers();
+        // let body = body.await.expect("Failed to read response body");
+        // let headers = headers.await.expect("Failed to read response body");
 
-        // Regex to find the CSRF token in the body of the HTML
-        let csrf =
-            Regex::new(r#"<input\s+type="hidden"\s+name="csrf_token"\s+value="([^"]*)""#).unwrap();
 
+
+        // Regex to find the CSRF token in the body of the HTML 
+        // Regex::new(r#"csrf_token=([^;]+)"#).unwrap();
+        let csrf_regex = Regex::new(r#"csrf_token=([^;]+)"#).unwrap();
         // For the love of god do not touch this code ever; i made a deal with the devil to make this work
         let mut csrf_token: String = String::default();
-        for i in csrf.captures_iter(body.as_str()) {
-            for i in i.get(1).iter() {
-                csrf_token = String::from(i.as_str().clone());
-                debug!("CSRF Token: {}", csrf_token);
-            }
-        }
+
+
+        warn!("CSRF token request header {:?}", headers);
+
+        for mat in csrf_regex.captures_iter(&format!("{:?}", resp.headers())) {
+          if let Some(token_match) = mat.get(1) { 
+              csrf_token = token_match.as_str().to_owned();
+          }
+      }
 
         // Form data for actual login
         let form_data = format!(
             "csrf_token={}&otp=&password={}&dest=https%3A%2F%2Fwww.reddit.com&username={}",
             csrf_token, encoded_password, username
         );
+
+        warn!("CSRF TOKEN: {:}", csrf_token);
 
         // Perform the actual login post request
         let _x = self.reqwest_client
@@ -136,7 +145,7 @@ impl super::Client {
         .await
         .expect("Failed to send HTTP request; to login to matrix");
 
-        debug!("Matrix login response: {:#?}", response);
+        debug!("Matrix login response: {:?}", response);
         if !response.status().is_success() {
             println!("{}", style("Login failed").red().bold());
             crate::exit!(0, "Login exited with failure");

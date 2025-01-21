@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-pub use clap::{Args, Parser, Subcommand};
+pub use clap::{Parser, Subcommand};
 
 /// CLI argument parser, see the Cli struct for the possible arguments
 #[derive(Parser, Debug)]
