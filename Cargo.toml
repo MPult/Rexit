@@ -2,7 +2,7 @@
 name = "rexit"
 version = "2.0.0"
 edition = "2021"
-description = "Export your Reddit Chats"
+description = "Export your Reddit Chats "
 readme = "README.md"
 license = "GPL-3.0"
 
