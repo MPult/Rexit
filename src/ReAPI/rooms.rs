@@ -55,7 +55,7 @@ pub async fn download_rooms(client: &Client, image_download: bool, no_usernames:
     // Read rooms from json
     let rooms = json["joined_rooms"]
         .as_array()
-        .expect("Error parsing array")
+        .expect("Error parsing array; likely error with login")
         .to_owned();
 
     // Move rooms into a Vec<Room>
