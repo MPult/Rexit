@@ -3,7 +3,6 @@
 use cached::proc_macro::cached;
 use log::info;
 use std::collections::HashSet;
-use std::hash;
 use std::io::Write;
 use std::{fs::OpenOptions, path::PathBuf};
 

@@ -29,6 +29,9 @@ Options:
       --no-usernames       Not Retrieve usernames (Is a lot faster)
 ```
 
+## IMPORTANT NOTICE
+Rexit works again (with the newest version V2). The only caveat is that only the bearer token flow is supported. See [here](./getBearerToken.md) for instructions.
+
 ## Usage
 
 Currently, you need to specify the formats, and it will ask for the username and password (or bearer token with that auth flow).

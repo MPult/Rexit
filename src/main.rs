@@ -44,7 +44,7 @@ async fn main() {
         images,
         out,
         debug,
-        noUsernames,
+        no_usernames,
         redact,
     } = args.command
     {
@@ -58,7 +58,7 @@ async fn main() {
         }
 
         // Get list of rooms
-        let rooms = ReAPI::download_rooms(&client, images, noUsernames, out.clone(), redact).await;
+        let rooms = ReAPI::download_rooms(&client, images, no_usernames, out.clone(), redact).await;
 
         // Exports messages to files.
         let export_formats: Vec<&str> = formats.split(",").collect();
@@ -80,7 +80,7 @@ async fn main() {
         images,
         out,
         debug,
-        noUsernames,
+        no_usernames,
         redact,
     } = args.command
     {
@@ -110,7 +110,7 @@ async fn main() {
         images,
         out,
         debug,
-        noUsernames,
+        no_usernames,
         redact,
     } = args.command
     {
@@ -206,10 +206,11 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
             trace!("Bearer token auth flow");
 
             client.login_with_token(
-                Password::new("Your Bearer Token from Matrix; see docs")
+                Password::new("Your Bearer Token from Matrix; https://github.com/mpult/rexit/ under Important Notice")
+                    .without_confirmation()
                     .prompt()
                     .expect("Error reading bearer token"),
-            );
+              );
 
         } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok()
         {

@@ -39,7 +39,7 @@ pub enum Commands {
 
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
-        noUsernames: bool,
+        no_usernames: bool,
 
         /// Redact
         #[arg(long)]
@@ -68,7 +68,7 @@ pub enum Commands {
 
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
-        noUsernames: bool,
+        no_usernames: bool,
       
         /// Redact
         #[arg(long)]
@@ -100,7 +100,7 @@ pub enum Commands {
 
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
-        noUsernames: bool,
+        no_usernames: bool,
 
         /// Redact
         #[arg(long)]
