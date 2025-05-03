@@ -7,7 +7,7 @@ messages:
   cargo run -- messages -f txt,json,csv --images --no-usernames --redact --token
 
 messages-dbg:
-  cargo run -- messages -f json --debug --images --no-usernames
+  cargo run -- messages -f json --debug --images --token
 
 subreddit:
   cargo run -- subreddit -n r/rexitTest -f txt,json,csv --images
