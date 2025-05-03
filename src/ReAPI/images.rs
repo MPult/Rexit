@@ -49,7 +49,7 @@ pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::p
     if redact  {
       info!(target: "get_image", "Getting image: [REDACTED]");
     } else {
-      info!(target: "get_image", "Getting image: {}...", &url.chars().take(30).collect());
+      info!(target: "get_image", "Getting image: {}...", &url.chars().take(30).collect::<String>());
     }
 
     image_log::write_image_log(out, url.clone());
