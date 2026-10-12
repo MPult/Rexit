@@ -98,30 +98,30 @@ pub async fn list_messages(
                     .displayname
             };
 
-            if message.content.url.is_some() {
+            if let Some(url) = message.content.url {
                 // Is a file
                 output.push(Message {
                     author,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Message(message.content.url.clone().unwrap()),
+                    content: Content::Message(url.clone()),
                 });
                 // If option is set download the image
                 if image_download {
                     images::get_image(
                         client,
-                        message.content.url.unwrap(),
+                        url,
                         out.clone(),
                         &out.join("messages/images"),
                         redact,
                     )
                     .await;
                 }
-            } else if message.content.body.is_some() {
+            } else if let Some(body) = message.content.body {
                 // Text Message
                 output.push(Message {
                     author,
                     timestamp: unix_millis_to_utc(message.timestamp),
-                    content: Content::Message(message.content.body.unwrap()),
+                    content: Content::Message(body),
                 })
             }
         }

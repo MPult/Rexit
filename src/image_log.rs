@@ -22,9 +22,7 @@ pub fn init(out: PathBuf) -> std::string::String {
 pub fn read_image_log(out: PathBuf) -> Vec<String> {
     let binding =
         std::fs::read_to_string(out.join("imageLog.txt")).expect("Error reading Image Log");
-    let image_log: Vec<String> = binding.split('\n').map(|line| line.to_string()).collect();
-
-    return image_log;
+    binding.split('\n').map(|line| line.to_string()).collect()
 }
 
 /// Writes to the image log

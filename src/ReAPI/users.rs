@@ -1,5 +1,4 @@
 use super::Client;
-use cached::SizedCache;
 use log::info;
 
 #[derive(Clone, Debug)]
@@ -8,11 +7,7 @@ pub struct User {
     pub displayname: String,
 }
 
-#[cached::proc_macro::cached(
-    type = "SizedCache<String, User>",
-    create = "{ SizedCache::with_size(10_000) }",
-    convert = r#"{ format!("{}", id) }"#
-)]
+#[cached::proc_macro::cached(max_size = 10_000, key = "String", convert = { id.clone() })]
 pub async fn get_user(client: &Client, id: String, redact: bool) -> User {
     let url = format!("https://matrix.redditspace.com/_matrix/client/r0/profile/{id}/displayname",);
 

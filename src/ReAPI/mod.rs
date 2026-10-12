@@ -38,6 +38,11 @@ impl Client {
             .reqwest_client
             .get(format!("https://oauth.reddit.com/{path}"))
             .header("Authorization", format!("Bearer {}", self.bearer_token()))
+            // Reddit's API rules ask for a descriptive user agent
+            .header(
+                "User-Agent",
+                concat!("rexit/", env!("CARGO_PKG_VERSION"), " (by u/mpult)"),
+            )
             .send()
             .await
             .expect("Failed to send HTTP request");
@@ -45,7 +50,8 @@ impl Client {
         let status = response.status();
         let body = response.text().await.unwrap();
         if !status.is_success() {
-            log::error!("Reddit API request to {path} failed (HTTP {status}): {body}");
+            let snippet: String = body.chars().take(300).collect();
+            log::error!("Reddit API request to {path} failed (HTTP {status}): {snippet}");
             return None;
         }
 

@@ -80,7 +80,7 @@ Then install Rexit
 $ brew install rexit
 ```
 ### Building from source
-1. Install rust
+1. Install a recent stable Rust (`rustup update stable`)
 2. Clone the repository
 3. Run:
 ```BASH
