@@ -1,6 +1,6 @@
 use super::Client;
 use cached::SizedCache;
-use log::{debug, info};
+use log::info;
 
 #[derive(Clone, Debug)]
 pub struct User {
@@ -26,16 +26,15 @@ pub async fn get_user(client: &Client, id: String, redact: bool) -> User {
     let value: serde_json::Value =
         serde_json::from_str(response.text().await.unwrap().as_str()).unwrap();
 
-
     // handle redaction
     if redact {
-      info!("Found user: [REDACTED]");
+        info!("Found user: [REDACTED]");
     } else {
-      info!("Found user: {}", value["displayname"].clone());
+        info!("Found user: {}", value["displayname"].clone());
     }
 
     User {
-        id: id,
+        id,
         displayname: value["displayname"].as_str().unwrap().to_string(),
     }
 }

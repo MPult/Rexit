@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::ReAPI;
 
 /// Export the chats into a .txt file
+#[allow(irrefutable_let_patterns)] // Content will gain more variants
 pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
     let mut output_buffer: String = String::new();
     let path = out_folder.join(format!("messages/{}.txt", &room.id[1..10]));
@@ -15,8 +16,7 @@ pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
                 "[{}] {}: {}\n",
                 message
                     .timestamp
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-                    .to_string(),
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                 message.author,
                 text
             );
@@ -38,6 +38,7 @@ pub fn export_room_chats_json(room: ReAPI::Room, out_folder: &Path) {
 }
 
 /// Export chats into csv
+#[allow(irrefutable_let_patterns)] // Content will gain more variants
 pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
     // Create the file for each chat / room
     let path = out_folder.join(format!("messages/{}.csv", &room.id[1..10]));
@@ -54,18 +55,13 @@ pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
                 "{}, {}, {},",
                 message
                     .timestamp
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-                    .to_string(),
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
                 message.author,
                 text
             );
         }
 
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(path.clone())
-            .unwrap();
+        let mut file = OpenOptions::new().append(true).open(path.clone()).unwrap();
 
         if let Err(e) = writeln!(file, "{}", line) {
             eprintln!("Couldn't write to file: {}", e);
@@ -227,9 +223,9 @@ mod tests {
 
         std::fs::create_dir_all(out_path.join("saved_posts")).unwrap();
 
-        let mut posts: Vec<ReAPI::SavedPost> = Vec::new();
+        let mut posts: Vec<ReAPI::saved_posts::SavedPost> = Vec::new();
 
-        let post = ReAPI::SavedPost {
+        let post = ReAPI::saved_posts::SavedPost {
             body_text: "hihi".to_owned(),
             title: "Da fehlt doch was".to_owned(),
             subreddit_name: "r/hamburg".to_owned(),

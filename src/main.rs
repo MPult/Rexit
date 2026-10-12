@@ -4,18 +4,18 @@
 // extern crate pretty_env_logger;
 // #[macro_use]
 // extern crate log;
-use log::{info, trace, warn, error};
+use log::{error, info, trace, warn};
 // use log4rs;
 
 use log::LevelFilter;
 use log4rs::append::console::{ConsoleAppender, Target};
 use log4rs::append::file::FileAppender;
-use log4rs::config::{Appender, Config, Root};
+use log4rs::config::{Appender, Config, Logger, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
 use console::style;
 use export::{export_saved_posts, export_subreddit};
-use inquire::{self, Password, Text};
+use inquire::{self, Password};
 use log4rs::filter::threshold::ThresholdFilter;
 use std::path::PathBuf;
 use ReAPI::Client;
@@ -31,6 +31,9 @@ use cli::{Cli, Parser};
 
 #[tokio::main]
 async fn main() {
+    // Load variables from a .env file, if present
+    dotenvy::dotenv().ok();
+
     // Parse the CLI args
     let args = Cli::parse();
 
@@ -80,7 +83,7 @@ async fn main() {
         images,
         out,
         debug,
-        no_usernames,
+        no_usernames: _,
         redact,
     } = args.command
     {
@@ -110,12 +113,12 @@ async fn main() {
         images,
         out,
         debug,
-        no_usernames,
+        no_usernames: _,
         redact,
     } = args.command
     {
         // Initialize
-        client = init(debug, token, images, out.clone(), false, redact).await;
+        client = init(debug, token, images, out.clone(), true, redact).await;
 
         // Creates out folder
         if !out.join("subreddit").exists() {
@@ -136,7 +139,14 @@ async fn main() {
 }
 
 /// Handles all the init stuff for rexit
-async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, redact: bool) -> Client {
+async fn init(
+    debug: bool,
+    _token: bool,
+    _images: bool,
+    out: PathBuf,
+    auth: bool,
+    redact: bool,
+) -> Client {
     // Create a Client
     let mut client = ReAPI::new_client(debug);
 
@@ -148,10 +158,10 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
     }
 
     if redact {
-      println!("{}\n{}", 
+        println!("{}\n{}", 
           style("The --redact flag attempts to redact personal information from the log file.").red().bold(), 
           style("This option is NOT perfect, some personal information may still be present. You have been warned.").red().bold());
-  }
+    }
 
     // Initialize logging
     let level = log::LevelFilter::Info;
@@ -184,6 +194,18 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
                 .filter(Box::new(ThresholdFilter::new(level)))
                 .build("stderr", Box::new(stderr)),
         )
+        // Keep dependency internals (TLS handshakes etc.) out of the log
+        .loggers(
+            [
+                "rustls",
+                "hyper",
+                "reqwest",
+                "cookie_store",
+                "h2",
+                "tokio_util",
+            ]
+            .map(|name| Logger::builder().build(name, LevelFilter::Warn)),
+        )
         .build(
             Root::builder()
                 .appender("logfile")
@@ -200,18 +222,14 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
 
     // Authenticate if needed
     if auth {
-        // Handle the three auth flows
-        if token == true {
-            // Use the bearer token flow
-            trace!("Bearer token auth flow");
+        let env_token = std::env::var("REXIT_TOKEN")
+            .ok()
+            .filter(|t| !t.trim().is_empty());
 
-            client.login_with_token(
-                Password::new("Your Bearer Token from Matrix; https://github.com/mpult/rexit/ under Important Notice")
-                    .without_confirmation()
-                    .prompt()
-                    .expect("Error reading bearer token"),
-              );
-
+        if let Some(env_token) = env_token {
+            // Use the bearer token from the environment
+            info!("Using bearer token from REXIT_TOKEN");
+            client.login_with_token(env_token.trim().to_owned());
         } else if std::env::var("REXIT_USERNAME").is_ok() && std::env::var("REXIT_PASSWORD").is_ok()
         {
             warn!("Found password and username enviornment variables");
@@ -221,21 +239,15 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
             let password = std::env::var("REXIT_PASSWORD").unwrap();
             client.login(username, password).await;
         } else {
-            // Use the username password auth flow
-            trace!("Password auth flow");
-            error!("Username and Password flow is currently not supported; see https://github.com/mpult/rexit");
+            // Use the bearer token flow
+            trace!("Bearer token auth flow");
 
-            let username = Text::new("Your Reddit Username")
-                .prompt()
-                .expect("Error reading username");
-
-            let password = Password::new("Your Reddit Password")
-                .without_confirmation()
-                .with_display_toggle_enabled()
-                .prompt()
-                .expect("Error reading password");
-
-            client.login(username.to_owned(), password.to_owned()).await;
+            client.login_with_token(
+                Password::new("Your Bearer Token (see https://github.com/mpult/rexit/blob/main/getBearerToken.md)")
+                    .without_confirmation()
+                    .prompt()
+                    .expect("Error reading bearer token"),
+            );
         }
         info!("Login Successful");
     }
@@ -248,5 +260,5 @@ async fn init(debug: bool, token: bool, images: bool, out: PathBuf, auth: bool, 
     // Initialize the image log
     image_log::init(out.clone());
 
-    return client;
+    client
 }

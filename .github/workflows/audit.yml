@@ -2,24 +2,24 @@ name: Security audit
 
 on:
   schedule:
-    # Runs at 00:00 UTC everyday
-    - cron: '0 0 * * *'
+    # Runs at 00:00 UTC every Monday
+    - cron: "0 0 * * 1"
   push:
     paths:
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
-  pull_request:
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
 
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      # Ensure that the latest version of Cargo is installed
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/audit-check@v1
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

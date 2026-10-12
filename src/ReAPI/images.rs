@@ -35,9 +35,14 @@ impl Image {
 }
 
 /// Gets images from a mxc:// URL as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixmediav3downloadservernamemediaid)
-pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::path::Path, redact: bool) {
+pub async fn get_image(
+    client: &Client,
+    url: String,
+    out: PathBuf,
+    path: &std::path::Path,
+    redact: bool,
+) {
     let mut url = url;
-    let mut id: Option<String> = None;
 
     if image_log::check_image_log(out.clone(), url.clone()) {
         // Image was already downloaded
@@ -46,33 +51,33 @@ pub async fn get_image(client: &Client, url: String, out: PathBuf, path: &std::p
     }
 
     // Handle redaction
-    if redact  {
-      info!(target: "get_image", "Getting image: [REDACTED]");
+    if redact {
+        info!(target: "get_image", "Getting image: [REDACTED]");
     } else {
-      info!(target: "get_image", "Getting image: {}...", &url.chars().take(30).collect::<String>());
+        info!(target: "get_image", "Getting image: {}...", &url.chars().take(30).collect::<String>());
     }
 
     image_log::write_image_log(out, url.clone());
 
     if url.starts_with("mxc") {
         // Matrix images
+        let id;
         (url, id) = parse_matrix_image_url(url.as_str());
         let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
         let path = path
             .join(id.unwrap())
             .with_extension(get_image_extension(data.headers()));
 
-        std::fs::write(path, data.bytes().await.unwrap().to_vec()).unwrap();
+        std::fs::write(path, data.bytes().await.unwrap()).unwrap();
     } else {
         // Litteraly any other image
         // Parse the image url to get the ID
-        id = Some(Url::parse(&url).unwrap().path().to_string());
-        id = Some(id.unwrap().replace("/", ""));
+        let id = Url::parse(&url).unwrap().path().replace('/', "");
 
         let data = client.reqwest_client.get(url.clone()).send().await.unwrap();
-        let path = path.join(id.unwrap());
+        let path = path.join(id);
 
-        std::fs::write(path, data.bytes().await.unwrap().to_vec()).unwrap();
+        std::fs::write(path, data.bytes().await.unwrap()).unwrap();
     }
 }
 
@@ -124,5 +129,5 @@ fn get_image_extension(headers: &reqwest::header::HeaderMap) -> String {
         exit!(0);
     }
 
-    return extension.unwrap();
+    extension.unwrap()
 }

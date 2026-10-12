@@ -14,9 +14,7 @@ pub fn init(out: PathBuf) -> std::string::String {
         std::fs::write(out.join("imageLog.txt"), "").expect("Error creating image log")
     }
 
-    let image_log_contents = std::fs::read_to_string(out.join("imageLog.txt")).unwrap();
-
-    return image_log_contents;
+    std::fs::read_to_string(out.join("imageLog.txt")).unwrap()
 }
 
 /// Gets the contents of the image log and returns it as a vector
@@ -32,7 +30,6 @@ pub fn read_image_log(out: PathBuf) -> Vec<String> {
 /// Writes to the image log
 pub fn write_image_log(out: PathBuf, url: String) {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open(out.join("imageLog.txt"))
         .expect("Error writing to image log");
@@ -48,5 +45,5 @@ pub fn check_image_log(out: PathBuf, url: String) -> bool {
 
     let hash_set: HashSet<&String> = image_log.iter().collect();
 
-    return hash_set.contains(&url);
+    hash_set.contains(&url)
 }

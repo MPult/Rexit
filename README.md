@@ -32,29 +32,28 @@ Options:
 ## IMPORTANT NOTICE
 Rexit works again (with the newest version V2). The only caveat is that only the bearer token flow is supported. See [here](./getBearerToken.md) for instructions.
 
+To skip the prompt, set `REXIT_TOKEN` in your environment or in a `.env` file in the directory you run Rexit from.
+
 ## Usage
 
-Currently, you need to specify the formats, and it will ask for the username and password (or bearer token with that auth flow).
+Rexit asks for your bearer token (see [here](./getBearerToken.md)), unless `REXIT_TOKEN` is set.
 
 To get messages:
 ```bash
 $ rexit messages --images
-> Your Reddit Username: <USERNAME>
-> Your Reddit Password: <PASSWORD>
+> Your Bearer Token: <TOKEN>
 ```
 
 To get saved posts:
 ```bash
 $ rexit saved --images
-> Your Reddit Username: <USERNAME>
-> Your Reddit Password: <PASSWORD>
+> Your Bearer Token: <TOKEN>
 ```
 
 To download a Subreddit:
 ```bash
 $ rexit subreddit r/redditDev --images
-> Your Reddit Username: <USERNAME>
-> Your Reddit Password: <PASSWORD>
+> Your Bearer Token: <TOKEN>
 ```
 
 It will save the files to the current directory. For CSV and TXT it is split by room. If an image (.jpg, .gif, .png, etc.) was sent the filename will be displayed as the message content, along with the prefix `FILE`. 

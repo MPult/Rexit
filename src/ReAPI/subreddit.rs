@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use super::{images, Client};
+use super::{images, json_str, Client};
 use log::info;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedList {
@@ -32,21 +32,14 @@ pub async fn download_subreddit(
     let mut saved_list: Vec<Post> = Vec::<Post>::new();
 
     loop {
-        let url = format!("https://www.reddit.com/{subreddit_name}.json?after={after_token}");
-
-        let response = client
-            .reqwest_client
-            .get(url)
-            .send()
+        let Some(saved_posts) = client
+            .reddit_api_get(&format!(
+                "{subreddit_name}.json?limit=100&after={after_token}"
+            ))
             .await
-            .expect("Failed to send HTTP request");
-
-        let saved_posts: Result<Value, _> =
-            serde_json::from_str(response.text().await.unwrap().as_str());
-        if saved_posts.is_err() {
-            return vec![];
-        }
-        let saved_posts = saved_posts.unwrap();
+        else {
+            break;
+        };
 
         // Iterates over all saved posts in the response array
         for post in saved_posts["data"]["children"].as_array().unwrap() {
@@ -62,10 +55,10 @@ pub async fn download_subreddit(
 
                     if image_download {
                         images::get_image(
-                            &client,
+                            client,
                             url.to_string(),
                             out.clone(),
-                            &std::path::PathBuf::from("./out/subreddit/images"),
+                            &out.join("subreddit/images"),
                             redact,
                         )
                         .await;
@@ -85,7 +78,8 @@ pub async fn download_subreddit(
                         .to_string(),
                     permalink: post["data"]["permalink"].as_str().unwrap().to_string(),
                     img_url: images,
-                    body_text: post["data"]["selftext"].as_str().unwrap().to_string(),
+                    body_text: json_str(&post["data"]["selftext"])
+                        + &json_str(&post["data"]["body"]),
                 };
 
                 saved_list.push(post);
@@ -99,7 +93,8 @@ pub async fn download_subreddit(
                         .to_string(),
                     permalink: post["data"]["permalink"].as_str().unwrap().to_string(),
                     img_url: images,
-                    body_text: post["data"]["selftext"].as_str().unwrap().to_string(),
+                    body_text: json_str(&post["data"]["selftext"])
+                        + &json_str(&post["data"]["body"]),
                 };
 
                 saved_list.push(post);
@@ -112,5 +107,5 @@ pub async fn download_subreddit(
         after_token = saved_posts["data"]["after"].as_str().unwrap().to_string();
     }
 
-    return saved_list;
+    saved_list
 }

@@ -21,7 +21,7 @@ pub enum Commands {
         #[arg(short, long, default_value = "txt,json,csv")]
         formats: String,
 
-        /// To use the bearer token flow, instead of username and password
+        /// Use the bearer token flow (now the default; kept for compatibility)
         #[arg(short, long)]
         token: bool,
 
@@ -43,14 +43,14 @@ pub enum Commands {
 
         /// Redact
         #[arg(long)]
-        redact: bool
+        redact: bool,
     },
     Saved {
         /// The formats to export to. Options: csv,json,txt
         #[arg(short, long, default_value = "txt,json,csv")]
         formats: String,
 
-        /// To use the bearer token flow, instead of username and password
+        /// Use the bearer token flow (now the default; kept for compatibility)
         #[arg(short, long)]
         token: bool,
 
@@ -69,10 +69,10 @@ pub enum Commands {
         /// Not Retrieve usernames (Is a lot faster)
         #[arg(long)]
         no_usernames: bool,
-      
+
         /// Redact
         #[arg(long)]
-        redact: bool
+        redact: bool,
     },
     Subreddit {
         /// Name of the subreddit (Example: r/redditdev)
@@ -82,7 +82,7 @@ pub enum Commands {
         #[arg(short, long, default_value = "txt,json,csv")]
         formats: String,
 
-        /// To use the bearer token flow, instead of username and password
+        /// Use the bearer token flow (now the default; kept for compatibility)
         #[arg(short, long)]
         token: bool,
 
@@ -104,6 +104,6 @@ pub enum Commands {
 
         /// Redact
         #[arg(long)]
-        redact: bool
+        redact: bool,
     },
 }

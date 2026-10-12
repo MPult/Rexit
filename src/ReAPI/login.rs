@@ -1,7 +1,6 @@
 use console::style;
 use log::{debug, warn};
 use regex::Regex;
-use reqwest::Client;
 
 impl super::Client {
     pub fn logged_in(&self) -> bool {
@@ -24,16 +23,15 @@ impl super::Client {
     /// Log into Reddit returning the Bearer
     pub async fn login(&mut self, username: String, password: String) {
         // URL encode the password & username
-        let encoded_password: String;
         let username = urlencoding::encode(&username);
 
         // Reddit is doing a weird thing where * is not urlencoded. Sorry for everyone that has * and %2A in their password
-        if password.contains("*") {
+        let encoded_password = if password.contains('*') {
             debug!("Password has *; URL-encode was rewritten");
-            encoded_password = password.replace("%2A", "*");
+            password.replace("%2A", "*")
         } else {
-            encoded_password = urlencoding::encode(&password).into_owned();
-        }
+            urlencoding::encode(&password).into_owned()
+        };
 
         // Send an HTTP GET request to get the CSRF token
         let resp = self
@@ -50,22 +48,19 @@ impl super::Client {
         // let body = body.await.expect("Failed to read response body");
         // let headers = headers.await.expect("Failed to read response body");
 
-
-
-        // Regex to find the CSRF token in the body of the HTML 
+        // Regex to find the CSRF token in the body of the HTML
         // Regex::new(r#"csrf_token=([^;]+)"#).unwrap();
         let csrf_regex = Regex::new(r#"csrf_token=([^;]+)"#).unwrap();
         // For the love of god do not touch this code ever; i made a deal with the devil to make this work
         let mut csrf_token: String = String::default();
 
-
         warn!("CSRF token request header {:?}", headers);
 
         for mat in csrf_regex.captures_iter(&format!("{:?}", resp.headers())) {
-          if let Some(token_match) = mat.get(1) { 
-              csrf_token = token_match.as_str().to_owned();
-          }
-      }
+            if let Some(token_match) = mat.get(1) {
+                csrf_token = token_match.as_str().to_owned();
+            }
+        }
 
         // Form data for actual login
         let form_data = format!(
@@ -117,7 +112,7 @@ impl super::Client {
         let mut bearer_token: String = String::default();
         for i in bearer_regex.captures_iter(&response.text().await.unwrap()) {
             for i in i.get(1).iter() {
-                bearer_token = String::from(i.as_str().clone());
+                bearer_token = String::from(i.as_str());
             }
         }
 

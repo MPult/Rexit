@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use super::Client;
-use log::{info, trace, warn, debug};
+use log::{debug, info};
 use serde::Serialize;
 use serde_json::Value;
 
@@ -12,15 +12,30 @@ pub struct Room {
 }
 
 impl Room {
-    async fn download(id: String, client: &Client, image_download: bool, no_usernames: bool, out: PathBuf, redact: bool) -> Room {
+    async fn download(
+        id: String,
+        client: &Client,
+        image_download: bool,
+        no_usernames: bool,
+        out: PathBuf,
+        redact: bool,
+    ) -> Room {
         Room {
             id: id.clone(),
-            messages: download_messages(&client, id.clone(), image_download, no_usernames, out, redact).await,
+            messages: download_messages(
+                client,
+                id.clone(),
+                image_download,
+                no_usernames,
+                out,
+                redact,
+            )
+            .await,
         }
     }
 
     pub fn messages(&self) -> Vec<super::Message> {
-        return self.messages.clone().unwrap();
+        self.messages.clone().unwrap()
     }
 }
 
@@ -30,13 +45,21 @@ async fn download_messages(
     image_download: bool,
     no_usernames: bool,
     out: PathBuf,
-    redact: bool
+    redact: bool,
 ) -> Option<Vec<super::Message>> {
-    Some(super::messages::list_messages(client, id, image_download, no_usernames, out, redact).await)
+    Some(
+        super::messages::list_messages(client, id, image_download, no_usernames, out, redact).await,
+    )
 }
 
 /// Returns list of all rooms that the user is joined to as per [SPEC](https://spec.matrix.org/v1.6/client-server-api/#get_matrixclientv3directorylistroomroomid)
-pub async fn download_rooms(client: &Client, image_download: bool, no_usernames: bool, out: PathBuf, redact: bool) -> Vec<Room> {
+pub async fn download_rooms(
+    client: &Client,
+    image_download: bool,
+    no_usernames: bool,
+    out: PathBuf,
+    redact: bool,
+) -> Vec<Room> {
     let resp = client
         .reqwest_client
         .get("https://matrix.redditspace.com/_matrix/client/v3/joined_rooms")
@@ -45,12 +68,11 @@ pub async fn download_rooms(client: &Client, image_download: bool, no_usernames:
         .await
         .expect("Failed to send HTTP request; to obtain rooms");
 
-      
-      // Parse json
-      let json: Value =
-      serde_json::from_str(&resp.text().await.unwrap()).expect("Error parsing Rooms list JSON");
-      
-      debug!("downloadRoomsResponse: {:?}", json);
+    // Parse json
+    let json: Value =
+        serde_json::from_str(&resp.text().await.unwrap()).expect("Error parsing Rooms list JSON");
+
+    debug!("downloadRoomsResponse: {:?}", json);
 
     // Read rooms from json
     let rooms = json["joined_rooms"]
@@ -60,7 +82,14 @@ pub async fn download_rooms(client: &Client, image_download: bool, no_usernames:
 
     // Move rooms into a Vec<Room>
     let rooms = rooms.iter().map(move |room| {
-        Room::download(room.to_string().replace("\"", ""), client, image_download, no_usernames, out.to_owned(), redact)
+        Room::download(
+            room.to_string().replace("\"", ""),
+            client,
+            image_download,
+            no_usernames,
+            out.to_owned(),
+            redact,
+        )
     });
 
     let mut rooms_2: Vec<Room> = vec![];
@@ -70,7 +99,7 @@ pub async fn download_rooms(client: &Client, image_download: bool, no_usernames:
 
     info!("Found {} room(s) ", rooms_2.len());
 
-    return rooms_2;
+    rooms_2
 }
 
 #[cfg(test)]

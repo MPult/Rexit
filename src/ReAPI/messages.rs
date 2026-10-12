@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use super::{images, Client};
 use chrono::{TimeZone, Utc};
-use log::debug;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
 /// Struct for a singular message.
@@ -74,10 +74,13 @@ pub async fn list_messages(
             .expect("Failed to send HTTP request; to obtain messages");
 
         // Deserialize response
+        let status = response.status();
+        let body = response.text().await.unwrap();
         let messages: Result<InternalMessages, serde_json::Error> =
-            serde_json::from_str(response.text().await.unwrap().as_str());
-        if messages.is_err() {
-            continue; // steamroll
+            serde_json::from_str(body.as_str());
+        if let Err(e) = messages {
+            error!("Failed to parse messages for room {id} (HTTP {status}): {e}; body: {body}");
+            break;
         }
         let messages = messages.unwrap();
         output.reserve(messages.chunk.len());
@@ -87,28 +90,28 @@ pub async fn list_messages(
             // Detect if message is text or file
 
             // Handle the no-usernames CLI flag
-            let author: String;
-
-            if no_usernames {
-                author = "N/A".to_owned();
+            let author = if no_usernames {
+                "N/A".to_owned()
             } else {
-                author = super::get_user(client, message.sender, redact).await.displayname;
-            }
+                super::get_user(client, message.sender, redact)
+                    .await
+                    .displayname
+            };
 
             if message.content.url.is_some() {
                 // Is a file
                 output.push(Message {
-                    author: author,
+                    author,
                     timestamp: unix_millis_to_utc(message.timestamp),
                     content: Content::Message(message.content.url.clone().unwrap()),
                 });
                 // If option is set download the image
                 if image_download {
                     images::get_image(
-                        &client,
+                        client,
                         message.content.url.unwrap(),
                         out.clone(),
-                        &std::path::PathBuf::from("./out/messages/images"),
+                        &out.join("messages/images"),
                         redact,
                     )
                     .await;
@@ -116,7 +119,7 @@ pub async fn list_messages(
             } else if message.content.body.is_some() {
                 // Text Message
                 output.push(Message {
-                    author: author,
+                    author,
                     timestamp: unix_millis_to_utc(message.timestamp),
                     content: Content::Message(message.content.body.unwrap()),
                 })
@@ -132,7 +135,7 @@ pub async fn list_messages(
             batch = messages.end;
         }
     }
-    return output;
+    output
 }
 
 fn unix_millis_to_utc(unix_time: i64) -> chrono::DateTime<Utc> {
@@ -154,9 +157,18 @@ mod tests {
 
         client.login(username, password).await;
 
-        let rooms = super::super::download_rooms(&client, true, false, PathBuf::from("./out"), false);
+        let rooms =
+            super::super::download_rooms(&client, true, false, PathBuf::from("./out"), false);
 
-        let _messages = super::list_messages(&client, rooms.await[1].clone().id, true, false, PathBuf::from("./out"), false).await;
+        let _messages = super::list_messages(
+            &client,
+            rooms.await[1].clone().id,
+            true,
+            false,
+            PathBuf::from("./out"),
+            false,
+        )
+        .await;
     }
 
     fn get_login() -> (String, String) {
