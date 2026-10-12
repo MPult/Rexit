@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Rexit</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b6ea5'/%3E%3Cpath d='M9 10h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-5 4v-4H9a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <header class="sidebar-header">
+        <h1>Chats</h1>
+        <span class="muted" id="summary"></span>
+      </header>
+      <div class="search">
+        <input id="search" type="search" placeholder="Search chats and messages" autocomplete="off" aria-label="Search chats and messages">
+      </div>
+      <nav class="list" id="list" aria-label="Chats"></nav>
+      <footer class="sidebar-footer muted" id="exported"></footer>
+    </aside>
+
+    <main class="chat" id="chat">
+      <header class="chat-header">
+        <button class="back" id="back" aria-label="Back to chats">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="avatar" id="chat-avatar" hidden></div>
+        <div class="chat-title">
+          <h2 id="chat-name"></h2>
+          <span class="muted" id="chat-meta"></span>
+        </div>
+      </header>
+      <div class="messages" id="messages">
+        <div class="empty" id="empty">
+          <p>Select a chat to start reading</p>
+          <p class="muted">Tip: press <kbd>/</kbd> to search, <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> to switch chats</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <img id="lightbox-img" alt="">
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

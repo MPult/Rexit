@@ -10,6 +10,7 @@ pub(crate) mod subreddit;
 mod users;
 
 pub use rooms::download_rooms;
+pub use rooms::whoami;
 pub use rooms::Room;
 
 pub use saved_posts::download_saved_posts;

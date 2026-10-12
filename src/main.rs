@@ -26,6 +26,7 @@ mod cli;
 mod export;
 mod image_log;
 mod macros;
+mod view;
 
 use cli::{Cli, Parser};
 
@@ -49,6 +50,7 @@ async fn main() {
         debug,
         no_usernames,
         redact,
+        view,
     } = args.command
     {
         // Initialize
@@ -61,10 +63,15 @@ async fn main() {
         }
 
         // Get list of rooms
+        let user_id = ReAPI::whoami(&client).await;
         let rooms = ReAPI::download_rooms(&client, images, no_usernames, out.clone(), redact).await;
 
-        // Exports messages to files.
-        let export_formats: Vec<&str> = formats.split(",").collect();
+        // Exports messages to files; the viewer needs the json export
+        let mut export_formats: Vec<&str> = formats.split(",").collect();
+        if view && !export_formats.contains(&"json") {
+            export_formats.push("json");
+        }
+        export::export_metadata(&rooms, user_id, &out);
 
         // Export chats
         for room in rooms {
@@ -77,6 +84,12 @@ async fn main() {
                 }
             }
         }
+
+        if view {
+            view::serve(out, 0, true).await;
+        }
+    } else if let cli::Commands::View { out, port, no_open } = args.command {
+        view::serve(out, port, !no_open).await;
     } else if let cli::Commands::Saved {
         formats,
         token,

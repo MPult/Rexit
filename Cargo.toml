@@ -1,6 +1,6 @@
 [package]
 name = "rexit"
-version = "2.1.0"
+version = "2.2.0"
 edition = "2021"
 description = "Export your Reddit Chats"
 readme = "README.md"
@@ -11,6 +11,7 @@ categories = ["command-line-utilities"]
 exclude = [".github/", "test_resources/", "justfile", ".DS_Store"]
 
 [dependencies]
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "query", "tokio"] }
 cached = { version = "4", features = ["async"] }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
@@ -28,6 +29,10 @@ tempfile = "3"
 tokio = { version = "1.47", features = ["full"] }
 url = "2.5"
 urlencoding = "2.1"
+webbrowser = "1"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
 
 [profile.release]
 strip = true

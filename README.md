@@ -11,7 +11,7 @@ Rexit - Liberate your Reddit Chats. This tool will export your Reddit chats into
 
 </div>
 
-Tool to export Reddit chats into a variety of open formats (CSV, JSON, TXT).
+Tool to export Reddit chats into a variety of open formats (CSV, JSON, TXT), and to browse them in a local web viewer.
 
 ```
 Export your Reddit Chats
@@ -56,6 +56,13 @@ $ rexit subreddit r/redditDev --images
 > Your Bearer Token: <TOKEN>
 ```
 
+To browse your exported chats in the browser:
+```bash
+$ rexit view            # reads ./out, opens http://127.0.0.1:<port>
+$ rexit messages --view # export, then open the viewer
+```
+The viewer runs only on your machine (localhost) and works offline. Use `--out` to pick another export folder, `--port` for a fixed port and `--no-open` to not open the browser. Exports made before v2.2 still open, but re-exporting adds chat names and shows which messages are yours.
+
 It will save the files to the current directory. For CSV and TXT it is split by room. If an image (.jpg, .gif, .png, etc.) was sent the filename will be displayed as the message content, along with the prefix `FILE`. 
 
 ## Installation
@@ -67,6 +74,7 @@ You can use the files provided in the releases' page of this repository, install
 2. Use the terminal run Rexit with the arguments you want. (See Usage for details)
 
 ### Cargo Install
+Requires Rust 1.92 or newer (`rustup update stable`).
 ```BASH
 $ cargo install rexit
 ```
@@ -80,7 +88,7 @@ Then install Rexit
 $ brew install rexit
 ```
 ### Building from source
-1. Install a recent stable Rust (`rustup update stable`)
+1. Install Rust 1.92 or newer (`rustup update stable`)
 2. Clone the repository
 3. Run:
 ```BASH

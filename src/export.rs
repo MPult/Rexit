@@ -5,24 +5,21 @@ use std::path::Path;
 use crate::ReAPI;
 
 /// Export the chats into a .txt file
-#[allow(irrefutable_let_patterns)] // Content will gain more variants
 pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
     let mut output_buffer: String = String::new();
-    let path = out_folder.join(format!("messages/{}.txt", &room.id[1..10]));
+    let path = out_folder.join(format!("messages/{}.txt", room.file_stem()));
 
     for message in room.messages() {
-        if let ReAPI::Content::Message(text) = message.content {
-            let line: String = format!(
-                "[{}] {}: {}\n",
-                message
-                    .timestamp
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
-                message.author,
-                text
-            );
+        let line: String = format!(
+            "[{}] {}: {}\n",
+            message
+                .timestamp
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            message.author,
+            message.content.as_text()
+        );
 
-            output_buffer.push_str(line.as_str());
-        }
+        output_buffer.push_str(line.as_str());
     }
 
     std::fs::write(path, output_buffer).unwrap();
@@ -30,7 +27,7 @@ pub fn export_room_chats_txt(room: ReAPI::Room, out_folder: &Path) {
 
 /// Export the chats into .json files.
 pub fn export_room_chats_json(room: ReAPI::Room, out_folder: &Path) {
-    let path = out_folder.join(format!("messages/{}.json", &room.id[1..10]));
+    let path = out_folder.join(format!("messages/{}.json", room.file_stem()));
 
     let file_data = serde_json::to_string(&room).unwrap();
 
@@ -38,28 +35,23 @@ pub fn export_room_chats_json(room: ReAPI::Room, out_folder: &Path) {
 }
 
 /// Export chats into csv
-#[allow(irrefutable_let_patterns)] // Content will gain more variants
 pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
     // Create the file for each chat / room
-    let path = out_folder.join(format!("messages/{}.csv", &room.id[1..10]));
+    let path = out_folder.join(format!("messages/{}.csv", room.file_stem()));
 
     std::fs::write(path.clone(), "timestamp, author, message \n").unwrap();
 
     // Iterate over each message in the chat; append to the file
     for message in room.messages() {
         // Format for the line to be appended
-        let mut line: String = String::new();
-
-        if let ReAPI::Content::Message(text) = message.content {
-            line = format!(
-                "{}, {}, {},",
-                message
-                    .timestamp
-                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
-                message.author,
-                text
-            );
-        }
+        let line = format!(
+            "{}, {}, {},",
+            message
+                .timestamp
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            message.author,
+            message.content.as_text()
+        );
 
         let mut file = OpenOptions::new().append(true).open(path.clone()).unwrap();
 
@@ -67,6 +59,45 @@ pub fn export_room_chats_csv(room: ReAPI::Room, out_folder: &Path) {
             eprintln!("Couldn't write to file: {}", e);
         }
     }
+}
+
+/// Metadata written next to the chat exports, read by `rexit view`
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Metadata {
+    pub schema_version: u32,
+    pub exported_at: chrono::DateTime<chrono::Utc>,
+    /// Matrix user id of the account that was exported
+    pub user_id: Option<String>,
+    pub rooms: Vec<MetadataRoom>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct MetadataRoom {
+    pub id: String,
+    /// File name (without extension) of the room's export
+    pub file: String,
+}
+
+/// Current version of the chat export format
+pub const SCHEMA_VERSION: u32 = 2;
+
+/// Export the metadata.json for a chat export
+pub fn export_metadata(rooms: &[ReAPI::Room], user_id: Option<String>, out_folder: &Path) {
+    let metadata = Metadata {
+        schema_version: SCHEMA_VERSION,
+        exported_at: chrono::Utc::now(),
+        user_id,
+        rooms: rooms
+            .iter()
+            .map(|room| MetadataRoom {
+                id: room.id.clone(),
+                file: room.file_stem(),
+            })
+            .collect(),
+    };
+    let path = out_folder.join("messages/metadata.json");
+    fs::write(path, serde_json::to_string_pretty(&metadata).unwrap())
+        .expect("Unable to write file");
 }
 
 /// Export saved posts
@@ -195,7 +226,9 @@ mod tests {
         let messages_array: Option<Vec<ReAPI::Message>> = Some(Vec::new());
 
         let message = ReAPI::Message {
+            id: "$1".to_owned(),
             author: "rexitTest".to_owned(),
+            sender: "@t2_test:reddit.com".to_owned(),
             timestamp: Utc::now(),
             content: ReAPI::Content::Message("Testing".to_owned()),
         };
@@ -203,6 +236,8 @@ mod tests {
 
         let room = ReAPI::Room {
             id: "!fTxOL9GzJaZR71aLRSYstHNVR5j_Zi82L4hIVyjdHuw:reddit.com".to_owned(),
+            name: None,
+            members: vec![],
             messages: messages_array,
         };
 

@@ -44,6 +44,24 @@ pub enum Commands {
         /// Redact
         #[arg(long)]
         redact: bool,
+
+        /// Open the chat viewer after exporting
+        #[arg(long)]
+        view: bool,
+    },
+    /// Browse an existing chat export in your web browser
+    View {
+        /// The export folder to read
+        #[arg(short, long, default_value = "./out")]
+        out: PathBuf,
+
+        /// Port to serve on (default: a random free port)
+        #[arg(short, long, default_value_t = 0)]
+        port: u16,
+
+        /// Don't open the browser automatically
+        #[arg(long)]
+        no_open: bool,
     },
     Saved {
         /// The formats to export to. Options: csv,json,txt
